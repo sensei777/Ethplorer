@@ -322,36 +322,43 @@ Ethplorer = {
         }
         var stopCheckingPendingAt = Date.now() + 1800000; // after 30 minutes
         function loadTxDetails(showResult = true) {
-            $.getJSON(Ethplorer.service, requestData, function(_txHash){
-                return function(data){
-                    if(data.debug){
-                        Ethplorer.requestDebug = data.debug;
+            $.getJSON(Ethplorer.service, requestData)
+                .done(function(_txHash){
+                    return function(data){
+                        if(data.debug){
+                            Ethplorer.requestDebug = data.debug;
+                        }
+                        if(data.ethPrice){
+                            Ethplorer.ethPrice = data.ethPrice;
+                        }
+                        if(showResult) {
+                            // if transaction is pending need send ga event
+                            if (data.pending) {
+                                Ethplorer.gaSendEvent('pageView', 'viewTx', 'tx-pending');
+                            }
+                            Ethplorer.showTxDetails(_txHash, data);
+                        } else if (!data.pending) {
+                            // Transaction not pending anymore. Reloading the view.
+                            location.reload();
+                        }
+                        // is transaction is pending
+                        if(data.pending && stopCheckingPendingAt > Date.now()){
+                            setTimeout(function() {
+                                loadTxDetails(false);
+                            }, 30000); // every 30 seconds
+                        }
                     }
                     if(data.ethPrice){
                         Ethplorer.ethPrice = data.ethPrice;
                     }
-                    if(showResult) {
-                        // if transaction is pending need send ga event
-                        if (data.pending) {
-                            Ethplorer.gaSendEvent('pageView', 'viewTx', 'tx-pending');
-                        }
-                        Ethplorer.showTxDetails(_txHash, data);
-                    } else if (!data.pending) {
-                        // Transaction not pending anymore. Reloading the view.
-                        location.reload();
-                    }
-                    // is transaction is pending
-                    if(data.pending && stopCheckingPendingAt > Date.now()){
-                        setTimeout(function() {
-                            loadTxDetails(false);
-                        }, 30000); // every 30 seconds
-                    }
-                }
-                if(data.ethPrice){
-                    Ethplorer.ethPrice = data.ethPrice;
-                }
-                Ethplorer.showTxDetails(_txHash, data);
-            }(txHash));
+                    Ethplorer.showTxDetails(_txHash, data);
+                }(txHash))
+                .fail(function() {
+                    // Try send request again after 30 seconds
+                    setTimeout(function() {
+                        loadTxDetails(false);
+                    }, 30000);
+                });
         }
         loadTxDetails();
     },
