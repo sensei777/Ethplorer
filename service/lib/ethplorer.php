@@ -795,7 +795,7 @@ class Ethplorer {
             $ten = Decimal::create(10);
             $dec = Decimal::create($decimals);
             $value = Decimal::create(hexdec($operation['value']));
-            $operation['value'] = '' . $value->div($ten->pow($dec), 4);
+            $operation['value'] = (string)$value;
 
             return $operation;
         }
