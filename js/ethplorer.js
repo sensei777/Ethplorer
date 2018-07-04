@@ -476,7 +476,7 @@ Ethplorer = {
         var titleAdd = '';
 
         $('#tx-parsed').hide();
-        if(oTx.input.length){
+        if(oTx.input && oTx.input.length){
             oTx.input = oTx.input.toUpperCase().replace(/^0x/i, '');
             Ethplorer.dataFields['transaction-tx-input'] = {
                 hex: oTx.input,
@@ -727,7 +727,8 @@ Ethplorer = {
             if (
                 (Ethplorer.Storage.get('showTx') === 'all' || Ethplorer.Storage.get('showTx') === 'eth') &&
                 (!txData.tx.operations || !txData.tx.operations.length) &&
-                txData.tx.value > 0
+                txData.tx.value > 0 &&
+                txData.tx.success !== false
             ) {
                 $('#token-operation-block').show();
                 $('#token-operation-block .token-name:eq(0)').html('ETH');
