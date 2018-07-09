@@ -94,6 +94,14 @@ Ethplorer = {
         });
         $(document).on('click', '[data-toggle="tab"]', function(){
             Ethplorer.Nav.set('tab', $(this).parent().attr('id'));
+            var activeTab = Ethplorer.getActiveTab();
+            if(activeTab){
+                if(activeTab != 'transfers'){
+                    $('#showTxChecks').hide();
+                }else{
+                    $('#showTxChecks').show();
+                }
+            }
             if(Ethplorer.data) Ethplorer.showFilter(Ethplorer.data);
         });
         $('.download').click(function(){
@@ -983,6 +991,8 @@ Ethplorer = {
 
             if(data.contract && data.contract.txsCount && (data.contract.txsCount > data.token.txsCount)){
                 data.token.txsCount = data.contract.txsCount;
+            }
+            if(data.token && data.token.txsCount){
                 if(data.token.txsCount > Ethplorer.maxListSize) Ethplorer.maxListSize = data.token.txsCount;
             }
 
@@ -1162,6 +1172,11 @@ Ethplorer = {
     showFilter: function(data){
         var activeTab = Ethplorer.getActiveTab();
         if(activeTab && data.pager && data.pager[activeTab]){
+            if(activeTab != 'transfers'){
+                $('#showTxChecks').hide();
+            }else{
+                $('#showTxChecks').show();
+            }
             if(data.pager[activeTab].records > 100000 || Ethplorer.maxListSize > 100000){
                 $('#filter_list').hide();
             }else{
@@ -1252,7 +1267,7 @@ Ethplorer = {
         var tableId = data.token ? 'address-token-transfers' : 'address-transfers';
         $('#' + tableId).find('.table').empty();
         if(Ethplorer.showTx && !$('#showTxEth').length){
-            var showTxChecks = '<span style="color: white;vertical-align:middle;"><label for="showTxEth">ETH <sup class="diff-down">new</sup></label></span> <input onClick="Ethplorer.showTransfers(this, \'eth\');" id="showTxEth" type="checkbox" ' + ((Ethplorer.showTx == 'all' || Ethplorer.showTx == 'eth') ? 'checked="checked"' : '') + ' name="showTxEth" value="1" style="vertical-align: text-bottom;margin-right:5px;">' + ' <span style="color: white;vertical-align:middle;"><label for="showTxTokens">Tokens <sup class="diff-down">new</sup></label></span> <input onClick="Ethplorer.showTransfers(this, \'tokens\');" id="showTxTokens" type="checkbox" ' + ((Ethplorer.showTx == 'all' || Ethplorer.showTx == 'tokens') ? 'checked="checked"' : '') + ' name="showTxTokens" value="1" style="vertical-align: text-bottom;margin-right:5px;">';
+            var showTxChecks = '<span id="showTxChecks"><span style="color: white;vertical-align:middle;"><label for="showTxEth">ETH <sup class="diff-down">new</sup></label></span> <input onClick="Ethplorer.showTransfers(this, \'eth\');" id="showTxEth" type="checkbox" ' + ((Ethplorer.showTx == 'all' || Ethplorer.showTx == 'eth') ? 'checked="checked"' : '') + ' name="showTxEth" value="1" style="vertical-align: text-bottom;margin-right:5px;">' + ' <span style="color: white;vertical-align:middle;"><label for="showTxTokens">Tokens <sup class="diff-down">new</sup></label></span> <input onClick="Ethplorer.showTransfers(this, \'tokens\');" id="showTxTokens" type="checkbox" ' + ((Ethplorer.showTx == 'all' || Ethplorer.showTx == 'tokens') ? 'checked="checked"' : '') + ' name="showTxTokens" value="1" style="vertical-align: text-bottom;margin-right:5px;"></span>';
 
             if(!data.token){
                 $('.filter-form').prepend('<style>@media screen and (max-width: 501px) {.filter-box.out-of-tabs{height: 35px !important;}}</style>' + showTxChecks);

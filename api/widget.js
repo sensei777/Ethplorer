@@ -1406,7 +1406,7 @@ ethplorerWidget.Type['tokenHistoryGrouped'] = function(element, options, templat
                     title: 'Token operations',
                     format: '#,### K',
                     viewWindow: {
-                        max: 1000
+                        max: 1250
                     },
                 },
                 1: {
@@ -1714,7 +1714,7 @@ ethplorerWidget.Type['tokenPriceHistoryGrouped'] = function(element, options, te
             rangeStart = new Date(strFirstDate);
         var date = stDate.getDate();
         fnDate.setDate(date - this.options.period + 1);
-        rangeStart.setDate(date - (this.options.period > 60 ? 60 : this.options.period) + 1);
+        rangeStart.setDate(date - (this.options.period > 90 ? 90 : this.options.period) + 1);
 
         // prepare data
         var aCountData = {};
@@ -1750,7 +1750,7 @@ ethplorerWidget.Type['tokenPriceHistoryGrouped'] = function(element, options, te
             if(!priceNotFound){
                 noPrice = false;
                 aData.push(['Day', 'Low', 'Open', 'Close', 'High', {type: 'string', role: 'tooltip', 'p': {'html': true}}, 'Token operations', {role: 'style'}, {type: 'string', role: 'tooltip', 'p': {'html': true}}, 'Volume', {role: 'style'}, {type: 'string', role: 'tooltip', 'p': {'html': true}}]);
-                if(this.options.period > 60){
+                if(this.options.period > 90){
                     fnDate = startPriceDate;
                 }
             }
