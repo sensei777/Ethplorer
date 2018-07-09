@@ -110,7 +110,7 @@ class Ethplorer {
      *
      * @var string
      */
-    protected $showTx = self::SHOW_TX_TOKENS;
+    protected $showTx = self::SHOW_TX_ALL;
 
     /**
      * Cache for getTokens
@@ -1249,7 +1249,7 @@ class Ethplorer {
      * @param string $address  Contract address
      * @return int
      */
-    public function countOperations($address, $useFilter = TRUE, $showTx = self::SHOW_TX_TOKENS){        
+    public function countOperations($address, $useFilter = TRUE, $showTx = self::SHOW_TX_ALL){        
         evxProfiler::checkpoint('countOperations', 'START', 'address=' . $address . ', useFilter = ' . ($useFilter ? 'ON' : 'OFF'));
         $cache = 'countOperations-' . $address . '-' . $showTx;
         $result = $this->oCache->get($cache, false, true, 30);
@@ -1492,7 +1492,7 @@ class Ethplorer {
      * @param int $limit       Maximum number of records
      * @return array
      */
-    public function getAddressOperations($address, $limit = 10, $offset = FALSE, array $aTypes = NULL, $showTx = self::SHOW_TX_TOKENS){
+    public function getAddressOperations($address, $limit = 10, $offset = FALSE, array $aTypes = NULL, $showTx = self::SHOW_TX_ALL){
         evxProfiler::checkpoint('getAddressOperations', 'START', 'address=' . $address . ', limit=' . $limit . ', offset=' . (is_array($offset) ? print_r($offset, TRUE) : (int)$offset));
 
         $result = array();

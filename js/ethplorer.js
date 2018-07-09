@@ -58,7 +58,7 @@ Ethplorer = {
                 }
             }
         }
-        Ethplorer.showTx = Ethplorer.Storage.get('showTx', null);
+        Ethplorer.showTx = Ethplorer.Storage.get('showTx', 'all');
         var showTxHash = window.location.hash.substr(1);
         if(showTxHash){
             aShowTxHash = showTxHash.split('=');
@@ -102,7 +102,7 @@ Ethplorer = {
             if(href.indexOf('&hash') == -1){
                 href += '&hash=' + md5($(this).attr("href") + hashDate);
             }
-            var showTx = Ethplorer.Storage.get('showTx', null);
+            var showTx = Ethplorer.Storage.get('showTx', 'all');
             if(showTx){
                 href += '&showTx=' + showTx;
             }
