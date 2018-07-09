@@ -94,6 +94,14 @@ Ethplorer = {
         });
         $(document).on('click', '[data-toggle="tab"]', function(){
             Ethplorer.Nav.set('tab', $(this).parent().attr('id'));
+            var activeTab = Ethplorer.getActiveTab();
+            if(activeTab){
+                if(activeTab != 'transfers'){
+                    Ethplorer.showTx = false;
+                }else{
+                    Ethplorer.showTx = Ethplorer.Storage.get('showTx', 'all');
+                }
+            }
             if(Ethplorer.data) Ethplorer.showFilter(Ethplorer.data);
         });
         $('.download').click(function(){
@@ -1164,11 +1172,6 @@ Ethplorer = {
     showFilter: function(data){
         var activeTab = Ethplorer.getActiveTab();
         if(activeTab && data.pager && data.pager[activeTab]){
-            if(activeTab != 'transfers'){
-                Ethplorer.showTx = false;
-            }else{
-                Ethplorer.showTx = Ethplorer.Storage.get('showTx', 'all');
-            }
             if(data.pager[activeTab].records > 100000 || Ethplorer.maxListSize > 100000){
                 $('#filter_list').hide();
             }else{
