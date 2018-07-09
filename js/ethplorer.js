@@ -58,6 +58,7 @@ Ethplorer = {
                 }
             }
         }
+        Ethplorer.maxListSize = 0;
         Ethplorer.showTx = Ethplorer.Storage.get('showTx', 'all');
         var showTxHash = window.location.hash.substr(1);
         if(showTxHash){
@@ -968,6 +969,7 @@ Ethplorer = {
 
             if(data.pager && data.pager.transfers){
                 data.token.transfersCount = data.pager.transfers.total;
+                if(data.token.transfersCount > Ethplorer.maxListSize) Ethplorer.maxListSize = data.token.transfersCount;
             }
             if(data.pager && data.pager.issuances){
                 data.token.issuancesCount = '';
@@ -981,6 +983,7 @@ Ethplorer = {
 
             if(data.contract && data.contract.txsCount && (data.contract.txsCount > data.token.txsCount)){
                 data.token.txsCount = data.contract.txsCount;
+                if(data.token.txsCount > Ethplorer.maxListSize) Ethplorer.maxListSize = data.token.txsCount;
             }
 
             var fields = [
@@ -1159,7 +1162,7 @@ Ethplorer = {
     showFilter: function(data){
         var activeTab = Ethplorer.getActiveTab();
         if(activeTab && data.pager && data.pager[activeTab]){
-            if(data.pager[activeTab].records > 100000 || ((activeTab == 'transfers') && (data.token && data.token.txsCount && data.token.txsCount > 100000))){
+            if(data.pager[activeTab].records > 100000 || Ethplorer.maxListSize > 100000){
                 $('#filter_list').hide();
             }else{
                 if(Ethplorer.showTx && data.token){
@@ -1352,6 +1355,7 @@ Ethplorer = {
             if(data.pager && data.pager.transfers){
                 var pagination = $('<tr class="paginationFooter"><td colspan="10"></td></tr>');
                 Ethplorer.drawPager(pagination.find('td'), data.pager.transfers);
+                if(data.pager.transfers.total && (data.pager.transfers.total > Ethplorer.maxListSize)) Ethplorer.maxListSize = data.pager.transfers.total;
                 $('#' + tableId + ' .table').append(pagination);
             }
         }
