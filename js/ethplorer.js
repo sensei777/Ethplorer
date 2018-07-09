@@ -973,6 +973,8 @@ Ethplorer = {
 
             if(data.contract && data.contract.txsCount && (data.contract.txsCount > data.token.txsCount)){
                 data.token.txsCount = data.contract.txsCount;
+            }
+            if(data.token && data.token.txsCount){
                 if(data.token.txsCount > Ethplorer.maxListSize) Ethplorer.maxListSize = data.token.txsCount;
             }
 
