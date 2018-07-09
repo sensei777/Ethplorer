@@ -1,6 +1,6 @@
 <?php
 require "vendor/autoload.php";
-require_once '../service/lib/ethplorer.php';
+require_once __DIR__ . '/../service/lib/ethplorer.php';
 
 use EverexIO\PHPUnitIterator\TestCase;
 
@@ -15,7 +15,7 @@ class serviceTest extends TestCase
 
     protected function setUp()
     {
-        $this->config = include('../service/config.php');
+        $this->config = include(__DIR__ . '/../service/config.php');
         $this->ethplorer = Ethplorer::db($this->config);
     }
 
