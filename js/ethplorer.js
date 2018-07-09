@@ -97,9 +97,9 @@ Ethplorer = {
             var activeTab = Ethplorer.getActiveTab();
             if(activeTab){
                 if(activeTab != 'transfers'){
-                    Ethplorer.showTx = false;
+                    $('#showTxChecks').hide();
                 }else{
-                    Ethplorer.showTx = Ethplorer.Storage.get('showTx', 'all');
+                    $('#showTxChecks').show();
                 }
             }
             if(Ethplorer.data) Ethplorer.showFilter(Ethplorer.data);
@@ -1262,7 +1262,7 @@ Ethplorer = {
         var tableId = data.token ? 'address-token-transfers' : 'address-transfers';
         $('#' + tableId).find('.table').empty();
         if(Ethplorer.showTx && !$('#showTxEth').length){
-            var showTxChecks = '<span style="color: white;vertical-align:middle;"><label for="showTxEth">ETH <sup class="diff-down">new</sup></label></span> <input onClick="Ethplorer.showTransfers(this, \'eth\');" id="showTxEth" type="checkbox" ' + ((Ethplorer.showTx == 'all' || Ethplorer.showTx == 'eth') ? 'checked="checked"' : '') + ' name="showTxEth" value="1" style="vertical-align: text-bottom;margin-right:5px;">' + ' <span style="color: white;vertical-align:middle;"><label for="showTxTokens">Tokens <sup class="diff-down">new</sup></label></span> <input onClick="Ethplorer.showTransfers(this, \'tokens\');" id="showTxTokens" type="checkbox" ' + ((Ethplorer.showTx == 'all' || Ethplorer.showTx == 'tokens') ? 'checked="checked"' : '') + ' name="showTxTokens" value="1" style="vertical-align: text-bottom;margin-right:5px;">';
+            var showTxChecks = '<span id="showTxChecks"><span style="color: white;vertical-align:middle;"><label for="showTxEth">ETH <sup class="diff-down">new</sup></label></span> <input onClick="Ethplorer.showTransfers(this, \'eth\');" id="showTxEth" type="checkbox" ' + ((Ethplorer.showTx == 'all' || Ethplorer.showTx == 'eth') ? 'checked="checked"' : '') + ' name="showTxEth" value="1" style="vertical-align: text-bottom;margin-right:5px;">' + ' <span style="color: white;vertical-align:middle;"><label for="showTxTokens">Tokens <sup class="diff-down">new</sup></label></span> <input onClick="Ethplorer.showTransfers(this, \'tokens\');" id="showTxTokens" type="checkbox" ' + ((Ethplorer.showTx == 'all' || Ethplorer.showTx == 'tokens') ? 'checked="checked"' : '') + ' name="showTxTokens" value="1" style="vertical-align: text-bottom;margin-right:5px;"></span>';
 
             if(!data.token){
                 $('.filter-form').prepend('<style>@media screen and (max-width: 501px) {.filter-box.out-of-tabs{height: 35px !important;}}</style>' + showTxChecks);
