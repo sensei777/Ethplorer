@@ -1172,6 +1172,11 @@ Ethplorer = {
     showFilter: function(data){
         var activeTab = Ethplorer.getActiveTab();
         if(activeTab && data.pager && data.pager[activeTab]){
+            if(activeTab != 'transfers'){
+                $('#showTxChecks').hide();
+            }else{
+                $('#showTxChecks').show();
+            }
             if(data.pager[activeTab].records > 100000 || Ethplorer.maxListSize > 100000){
                 $('#filter_list').hide();
             }else{
