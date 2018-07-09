@@ -863,7 +863,9 @@ Ethplorer = {
         var aValues = ['address', 'balance'];
         if(data.balanceIn){
             aValues.push('balanceIn');
-            aValues.push('balanceOut');
+            if('undefined' === typeof(data.hideBalanceOut)){
+                aValues.push('balanceOut');
+            }
         }
         Ethplorer.fillValues('address', data, aValues);
         $('#address-token-balances, #address-token-details').hide();

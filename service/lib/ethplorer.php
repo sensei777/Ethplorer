@@ -475,6 +475,7 @@ class Ethplorer {
             if($out < 0){
                 $in = $result['balance'];
                 $out = 0;
+                $result['hideBalanceOut'] = true;
             }
             $result['balanceOut'] = $out;
             $result['balanceIn'] = $in;
