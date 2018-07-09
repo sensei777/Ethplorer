@@ -1882,7 +1882,11 @@ Ethplorer = {
                     value = "N/A";
                 }else{
                     var gwei = Ethplorer.Utils.toBig(value).mul(Math.pow(10, 9)).toString();
-                    value = Ethplorer.Utils.formatNum(value, true, 18, true) + '&nbsp;<i class="fab fa-ethereum"></i>&nbsp;ETH&nbsp;(' + Ethplorer.Utils.formatNum(gwei, true, 3, true).toString().replace(/[0.]*$/, '', 'g') + '&nbsp;Gwei)';
+                    gwei = Ethplorer.Utils.formatNum(gwei, true, 3, true).toString();
+                    if(gwei.toString().indexOf(".") > 0){
+                        gwei = gwei.replace(/0*$/, '', 'g').replace(/\.$/, '', 'g');
+                    }
+                    value = Ethplorer.Utils.formatNum(value, true, 18, true) + '&nbsp;<i class="fab fa-ethereum"></i>&nbsp;ETH&nbsp;(' + gwei + '&nbsp;Gwei)';
                 }
                 break;
             case 'ether-full':
