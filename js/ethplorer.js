@@ -380,7 +380,12 @@ Ethplorer = {
             var pf = parseFloat(totalSupply.replace(/\,/g,'').split(' ')[0]);
             if(pf){
                 pf = Ethplorer.Utils.round(pf * oToken.price.rate, 2);
-                totalSupply = totalSupply + '<br><span class="total-supply-usd">$&nbsp;' + Ethplorer.Utils.formatNum(pf, true, 2, true) + '</span>';
+                if(pf < 1e+12){
+                    pf = Ethplorer.Utils.formatNum(pf, true, 2, true);
+                }else{
+                    pf = "--";
+                }
+                totalSupply = totalSupply + '<br><span class="total-supply-usd">$&nbsp;' + pf + '</span>';
                 $('#transaction-token-totalSupply').html(totalSupply);
             }
         }
@@ -575,7 +580,12 @@ Ethplorer = {
                 var pf = parseFloat(totalSupply.replace(/\,/g,'').split(' ')[0]);
                 if(pf){
                     pf = Ethplorer.Utils.round(pf * oToken.price.rate, 2);
-                    totalSupply = totalSupply + '<br><span class="total-supply-usd">$&nbsp;' + Ethplorer.Utils.formatNum(pf, true, 2, true) + '</span>';
+                    if(pf < 1e+12){
+                        pf = Ethplorer.Utils.formatNum(pf, true, 2, true);
+                    }else{
+                        pf = "--";
+                    }
+                    totalSupply = totalSupply + '<br><span class="total-supply-usd">$&nbsp;' + pf + '</span>';
                     $('#transaction-token-totalSupply').html(totalSupply);
                 }
             }
