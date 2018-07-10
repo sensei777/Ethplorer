@@ -597,7 +597,7 @@ class ethplorerController {
     public function getPoolLastTransactions(){
         $result = array();
         $poolId = $this->getRequest('poolId', FALSE);
-        $period = max(min(abs((int)$this->getRequest('period', 86400)), 864000), 1);
+        $period = max(min(abs((int)$this->getRequest('period', 600)), 864000), 1);
         if($poolId){
             $result = $this->db->getPoolLastTransactions($poolId, $period);
         }
@@ -613,7 +613,7 @@ class ethplorerController {
     public function getPoolLastOperations(){
         $result = array();
         $poolId = $this->getRequest('poolId', FALSE);
-        $period = max(min(abs((int)$this->getRequest('period', 86400)), 864000), 1);
+        $period = max(min(abs((int)$this->getRequest('period', 600)), 864000), 1);
         if($poolId){
             $result = $this->db->getPoolLastOperations($poolId, $period);
         }
