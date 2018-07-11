@@ -1747,9 +1747,9 @@ Ethplorer = {
                 oToken[property] = Ethplorer.Config.tokens[oToken.address][property];
             }
         }
+        oToken.decimals = parseFloat(Ethplorer.Utils.toBig(oToken.decimals).toString());
         oToken.totalSupply = Ethplorer.Utils.toBig(oToken.totalSupply);
         if(oToken.decimals){
-            oToken.decimals = parseInt(Ethplorer.Utils.toBig(oToken.decimals).toString());
             // To handle ether-like tokens with 18 decimals
             if(oToken.decimals > 20){ // Too many decimals, must be invalid value, use 0 instead
                 oToken.decimals = 0;
@@ -1763,7 +1763,7 @@ Ethplorer = {
             oToken.totalIn = oToken.totalIn / k;
             oToken.totalOut = oToken.totalOut / k;
         }
-        if(parseInt(oToken.totalSupply.toString()) >= 1e+18){
+        if(parseFloat(oToken.totalSupply.toString()) >= 1e+18){
             if(!oToken.decimals){
                 oToken.estimatedDecimals = true;
                 oToken.decimals = 18;
