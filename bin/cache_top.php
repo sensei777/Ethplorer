@@ -15,6 +15,8 @@
  * limitations under the License.
  */
 
+ini_set('memory_limit', '512M');
+
 require dirname(__FILE__) . '/../service/lib/ethplorer.php';
 $aConfig = require_once dirname(__FILE__) . '/../service/config.php';
 
