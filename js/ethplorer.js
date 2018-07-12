@@ -618,7 +618,7 @@ Ethplorer = {
                     op.index = idx;
                     var opToken = Ethplorer.prepareToken(op.token);
                     var valFloat = 0;
-                    if('undefined' !== typeof(op.value)){
+                    if('undefined' !== typeof(op.value)){                       
                         valFloat = parseFloat(Ethplorer.Utils.toBig(op.value).toString());
                         valFloat =  valFloat / Math.pow(10, opToken.decimals)
                         if(Ethplorer.Utils.isSafari()){
@@ -1288,7 +1288,14 @@ Ethplorer = {
                     }else{
                         var txToken = Ethplorer.prepareToken(data.token ? data.token : data.tokens[tx.contract]);
                     }
-                    if(!tx.isEth) qty = qty / Math.pow(10, txToken.decimals);
+                    if(!tx.isEth){ 
+                        var k = Math.pow(10, txToken.decimals);
+                        if(Ethplorer.Utils.isSafari()){
+                            qty = qty / Math.pow(10, k);
+                        }else{
+                            qty = parseFloat(Ethplorer.Utils.toBig(tx.value).div(k).toString());
+                        }
+                    }
                     var row = $('<tr>');
                     var tdDate = $('<td>').addClass('hide-small');
                     var tdData = $('<td>');
