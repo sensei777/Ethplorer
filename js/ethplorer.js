@@ -2095,10 +2095,6 @@ Ethplorer = {
             if(!num){
                 num = 0;
             }
-            function math(command, val, decimals){
-                var k = Math.pow(10, decimals ? parseInt(decimals) : 0);
-                return Math[command](val * k) / k;
-            }
             function padZero(s, len){
                 while(s.length < len) s += '0';
                 return s;
@@ -2132,13 +2128,8 @@ Ethplorer = {
                 }
                 return res;
             }
-            var parts = num.toString().split('.');
             if(withDecimals){
-                if(parts.length > 1){
-                    if(parts[1].length > decimals){
-                        num = math('round', num, decimals);
-                    }
-                }
+                num = Ethplorer.Utils.round(num, decimals);
             }
             var res = parts[0].toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
             var zeroCount = cutZeroes ? 2 : decimals;
@@ -2181,10 +2172,6 @@ Ethplorer = {
                     postfix = ' M';
                 }
             }
-            function math(command, val, decimals){
-                var k = Math.pow(10, decimals ? parseInt(decimals) : 0);
-                return Math[command](val * k) / k;
-            }
             function padZero(s, len){
                 while(s.length < len) s += '0';
                 return s;
@@ -2210,7 +2197,7 @@ Ethplorer = {
             }
 
             if(withDecimals){
-                num = math('round', num, decimals);
+                num = Ethplorer.Utils.round(num, decimals);
             }
             var parts = num.toString().split('.');
             var res = parts[0].toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
@@ -2391,9 +2378,14 @@ Ethplorer = {
         },
         round: function(val, decimals){
             decimals = decimals ? parseInt(decimals) : 0;
-            var k = decimals ? Math.pow(10, decimals) : 1;
-
-            return Math.round(val * k) / k;
+            var parts = val.toString().split('.');
+            if(parts.length > 1){
+                if(parts[1].length > decimals){
+                    var k = decimals ? Math.pow(10, decimals) : 1;
+                    return Math.round(val * k) / k;
+                }
+            }
+            return val;
         },
         floor: function(val, decimals){
             decimals = decimals ? parseInt(decimals) : 0;
