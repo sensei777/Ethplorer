@@ -2132,11 +2132,14 @@ Ethplorer = {
                 }
                 return res;
             }
-
-            if(withDecimals){
-                num = math('round', num, decimals);
-            }
             var parts = num.toString().split('.');
+            if(withDecimals){
+                if(parts.length > 1){
+                    if(parts[1].length > decimals){
+                        num = math('round', num, decimals);
+                    }
+                }
+            }
             var res = parts[0].toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
             var zeroCount = cutZeroes ? 2 : decimals;
             if(withDecimals && decimals){
