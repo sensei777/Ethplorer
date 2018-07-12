@@ -2131,6 +2131,7 @@ Ethplorer = {
             if(withDecimals){
                 num = Ethplorer.Utils.round(num, decimals);
             }
+            var parts = num.toString().split('.');
             var res = parts[0].toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
             var zeroCount = cutZeroes ? 2 : decimals;
             if(withDecimals && decimals){
