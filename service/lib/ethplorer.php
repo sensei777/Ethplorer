@@ -2838,7 +2838,7 @@ class Ethplorer {
 
                 // extend search request if need update cache
                 if ($updateCache) {
-                    $search = array('$and' => array($search, array('timestamp' => array('$gt' => 0 /*$result['timestamp']*/))));
+                    $search = array('$and' => array($search, array('timestamp' => array('$gt' => $result['timestamp']))));
                 }
                 $cursor = $this->oMongo
                     ->find('operations', $search, [ 'timestamp' => 1 ], false, false, array('timestamp', 'value', 'contract', 'from', 'type'));
