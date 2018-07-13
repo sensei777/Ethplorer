@@ -2788,15 +2788,17 @@ class Ethplorer {
         $cache = 'address_operations_history-' . $address . ($withEth ? '-eth' : '');
         $result = $this->oCache->get($cache, false, true);
         $updateCache = false;
-        if($result && isset($result['timestamp'])){
-            if(time() > ($result['timestamp'] + 3600)) $updateCache = true;
+        // If data in cache and cache expire need update cache
+        if($result && isset($result['timestamp']) && time() > ($result['timestamp'] + 3600)) {
+            $updateCache = true;
         }
+        // if data in cache has no updCache field need reset result
         if(!isset($result['updCache'])){
             $result = false;
             $updateCache = false;
         }
 
-        if(FALSE === $result || $updateCache){
+        if(FALSE === $result || $updateCache) {
             $aSearch = array('from', 'to', 'address');
             $aTypes = array('transfer', 'issuance', 'burn', 'mint');
             $aResult = array();
@@ -2811,7 +2813,20 @@ class Ethplorer {
                 $result['cache'] = 'cacheUpdated';
             }
 
+            $aAddressBalances = $this->getAddressBalances($address, TRUE, $withEth);
+            $ten = Decimal::create(10);
+
+            if(isset($result['tokens'])) $aTokenInfo = $result['tokens'];
+            else{
+                $result['tokens'] = array();
+                $aTokenInfo = array();
+            }
+
+            $curDate = false;
+
+            // Getting operations by ever$result || $updateCachy fields: from, to, address
             foreach($aSearch as $cond){
+                // Make search condition for field
                 $search = array($cond => $address);
                 if(!$withEth){
                     if($this->useOperations2){
@@ -2820,11 +2835,14 @@ class Ethplorer {
                         $search['contract'] = array('$ne' => 'ETH');
                     }
                 }
-                if($updateCache){
-                    $search = array('$and' => array($search, array('timestamp' => array('$gt' => $result['timestamp']))));
-                }
 
-                $cursor = $this->oMongo->find('operations', $search, false, false, false, array('timestamp', 'value', 'contract', 'from', 'type'));
+                // extend search request if need update cache
+                if ($updateCache) {
+                    $search = array('$and' => array($search, array('timestamp' => array('$gt' => 0 /*$result['timestamp']*/))));
+                }
+                $cursor = $this->oMongo
+                    ->find('operations', $search, [ 'timestamp' => 1 ], false, false, array('timestamp', 'value', 'contract', 'from', 'type'));
+
                 foreach($cursor as $record){
                     $date = gmdate("Y-m-d", $record['timestamp']);
                     if(!isset($result['txs'][$date])){
@@ -2844,11 +2862,13 @@ class Ethplorer {
                     if($withEth && ($record['contract'] == 'ETH')){
                         $record['contract'] = self::ADDRESS_ETH;
                     }
-
-                    if((FALSE === array_search($record['contract'], $this->aSettings['updateRates'])) || !in_array($record['type'], $aTypes)){
+                    
+                    if(
+                        (
+                            FALSE === array_search($record['contract'], $this->aSettings['updateRates'])
+                        ) || !in_array($record['type'], $aTypes)) {
                         continue;
                     }
-
                     if(!in_array($record['contract'], $aContracts)){
                         $aContracts[] = $record['contract'];
                     }
@@ -2861,43 +2881,21 @@ class Ethplorer {
                     }
                     if(($record['from'] == $address) || ($record['type'] == 'burn')){
                         $add = 1;
-                    }
-                    if(!isset($aResult[$record['timestamp']])) $aResult[$record['timestamp']] = array();
-                    //$aResult[$record['timestamp']][] = array($record['contract'], $record['value'], $add);
-                    $aResult[$record['timestamp']][] = array(is_int($indContract) ? $indContract : $record['contract'], $record['value'], $add);
-                }
-            }
-            if($maxTs > 0) $result['timestamp'] = $maxTs;
-            krsort($aResult, SORT_NUMERIC);
-
-            $aAddressBalances = $this->getAddressBalances($address, TRUE, $withEth);
-            $ten = Decimal::create(10);
-
-            if(isset($result['tokens'])) $aTokenInfo = $result['tokens'];
-            else{
-                $result['tokens'] = array();
-                $aTokenInfo = array();
-            }
-
-            $curDate = false;
-            //unset($result['timestamp']);
-            foreach($aResult as $ts => $aRecords){
-                foreach($aRecords as $record){
+                    }        
                     $date = gmdate("Y-m-d", $ts);
                     $nextDate = false;
                     if($curDate && ($curDate != $date)){
                         $nextDate = true;
                     }
-
-                    //$contract = $record[0];
-                    $contract = is_int($record[0]) ? $aContracts[$record[0]] : $record[0];
-                    //if(!isset($result['timestamp'])) $result['timestamp'] = $ts;
+                    
+                    $contract = is_int($indContract) ? $aContracts[$indContract] : $record['contract'];
 
                     if($contract == self::ADDRESS_ETH){
                         $token = $this->getEthToken();
                     }else{
                         $token = isset($aTokenInfo[$contract]) ? $aTokenInfo[$contract] : $this->getToken($contract, TRUE);
                     }
+
                     if($token){
                         if(!isset($aTokenInfo[$contract])){
                             $result['tokens'][$contract] = $token;
@@ -2926,7 +2924,7 @@ class Ethplorer {
 
                         if($dec){
                             // operation value
-                            $value = Decimal::create($record[1]);
+                            $value = Decimal::create($record['value']);
                             if($contract != self::ADDRESS_ETH){
                                 $value = $value->div($ten->pow($dec));
                             }
@@ -2940,7 +2938,7 @@ class Ethplorer {
                             $result['volume'][$date][$token['address']] = '' . $curDateVolume;
 
                             // get old balance
-                            if(1 == $record[2]){
+                            if($add) {
                                 $oldBalance = $balance->add($value);
                             }else{
                                 $oldBalance = $balance->sub($value);
@@ -2952,6 +2950,7 @@ class Ethplorer {
                     $curDate = $date;
                 }
             }
+
             if(!empty($result)){
                 $result['updCache'] = 1;
                 if(!isset($result['timestamp'])) $result['timestamp'] = time();
