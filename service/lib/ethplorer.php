@@ -2621,7 +2621,9 @@ class Ethplorer {
             if(isset($this->aSettings['currency']) && (!$skipGetHistory || $updateFullHistory)){
                 $method = 'getCurrencyHistory';
                 $params = array($address, 'USD');
-                if($lastTS && !$updateFullHistory) $params[] = $lastTS + 1;
+                if($lastTS && !$updateFullHistory) {
+                    $params[] = $lastTS + 1;
+                }
                 $res = $this->_jsonrpcall($this->aSettings['currency'], $method, $params);
                 if(FALSE !== $result){
                     $result = array_merge($result, $res);
@@ -2680,12 +2682,9 @@ class Ethplorer {
             $aPriceHistory = array();
             if($period){
                 $tsStart = gmmktime(0, 0, 0, date('n'), date('j') - $period, date('Y'));
-                for($i = 0; $i < count($result); $i++){
-                    if($result[$i]['ts'] < $tsStart){
-                        continue;
-                    }
-                    $aPriceHistory[] = $result[$i];
-                }
+                $aPriceHistory = array_filter($result, function($item) use ($tsStart) {
+                    return $item['ts'] >= $tsStart;
+                });
             }else{
                 $aPriceHistory = $result;
             }
@@ -2813,18 +2812,16 @@ class Ethplorer {
                 $result['cache'] = 'cacheUpdated';
             }
 
-            $aAddressBalances = $this->getAddressBalances($address, TRUE, $withEth);
-            $ten = Decimal::create(10);
-
-            if(isset($result['tokens'])) $aTokenInfo = $result['tokens'];
-            else{
+            if(isset($result['tokens'])) {
+                $aTokenInfo = $result['tokens'];
+            } else {
                 $result['tokens'] = array();
                 $aTokenInfo = array();
             }
 
             $curDate = false;
 
-            // Getting operations by ever$result || $updateCachy fields: from, to, address
+            // Getting operations by ever $result || $updateCachy fields: from, to, address
             foreach($aSearch as $cond){
                 // Make search condition for field
                 $search = array($cond => $address);
@@ -2838,12 +2835,24 @@ class Ethplorer {
 
                 // extend search request if need update cache
                 if ($updateCache) {
-                    $search = array('$and' => array($search, array('timestamp' => array('$gt' => $result['timestamp']))));
+                    $search = array('$and' => array($search));
+                    if (isset($result['timestamp'])) {
+                        // if request with timestamp set it
+                        array_push(
+                            $search['$and'],
+                            array('timestamp' => array('$gt' => $result['timestamp']))
+                        );
+                    }
                 }
+
+                $aAddressBalances = $this->getAddressBalances($address, TRUE, $withEth);
+                $ten = Decimal::create(10);
+
+                // get date of first transaction
                 $cursor = $this->oMongo
                     ->find('operations', $search, [ 'timestamp' => 1 ], false, false, array('timestamp', 'value', 'contract', 'from', 'type'));
 
-                foreach($cursor as $record){
+                foreach($cursor as $record) {
                     $date = gmdate("Y-m-d", $record['timestamp']);
                     if(!isset($result['txs'][$date])){
                         $result['txs'][$date] = 0;
@@ -2853,10 +2862,6 @@ class Ethplorer {
                         if($record['timestamp'] > $maxTs){
                             $maxTs = $record['timestamp'];
                         }
-                        if(!$updateCache && (!$minTs || ($record['timestamp'] < $minTs))){
-                            $minTs = $record['timestamp'];
-                            $result['firstDate'] = $date;
-                        }
                     }
 
                     if($withEth && ($record['contract'] == 'ETH')){
@@ -2865,10 +2870,13 @@ class Ethplorer {
                     
                     if(
                         (
+                            isset($this->aSettings['updateRates']) &&
                             FALSE === array_search($record['contract'], $this->aSettings['updateRates'])
-                        ) || !in_array($record['type'], $aTypes)) {
+                        ) || !in_array($record['type'], $aTypes)
+                    ) {
                         continue;
                     }
+
                     if(!in_array($record['contract'], $aContracts)){
                         $aContracts[] = $record['contract'];
                     }
@@ -2881,8 +2889,8 @@ class Ethplorer {
                     }
                     if(($record['from'] == $address) || ($record['type'] == 'burn')){
                         $add = 1;
-                    }        
-                    $date = gmdate("Y-m-d", $ts);
+                    }
+
                     $nextDate = false;
                     if($curDate && ($curDate != $date)){
                         $nextDate = true;
@@ -2903,7 +2911,9 @@ class Ethplorer {
                         }
 
                         $dec = false;
-                        if(isset($token['decimals'])) $dec = Decimal::create($token['decimals']);
+                        if(isset($token['decimals'])) {
+                            $dec = Decimal::create($token['decimals']);
+                        }
 
                         $balance = Decimal::create(0);
                         if(!isset($aTokenInfo[$contract]['balance'])){
@@ -2918,7 +2928,9 @@ class Ethplorer {
                             }
                             $result['balances'][$date][$token['address']] = '' . $balance;
                         }else{
-                            if($nextDate) $result['balances'][$date][$token['address']] = $aTokenInfo[$contract]['balance'];
+                            if($nextDate) {
+                                $result['balances'][$date][$token['address']] = $aTokenInfo[$contract]['balance'];
+                            }
                             $balance = Decimal::create($aTokenInfo[$contract]['balance']);
                         }
 
@@ -2964,8 +2976,12 @@ class Ethplorer {
         $aPrices = array();
         $result['tokenPrices'] = array();
         $maxTs = 0;
+
+        // Get amount of days from first operation
+        $firstOperationDate = new DateTime(array_keys($result['txs'])[0]);
+        $difference = $firstOperationDate->diff(new DateTime());
         foreach($result['tokens'] as $token => $data){
-            $aPrices[$token] = $this->getTokenPriceHistory($token, 365, 'daily');
+            $aPrices[$token] = $this->getTokenPriceHistory($token, $difference->days, 'daily');
             if(!is_array($aPrices[$token]) || !count($aPrices[$token])){
                 unset($aPrices[$token]);
                 continue;
