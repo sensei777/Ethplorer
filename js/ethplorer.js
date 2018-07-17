@@ -619,8 +619,8 @@ Ethplorer = {
                     var opToken = Ethplorer.prepareToken(op.token);
                     var valFloat = 0;
                     if('undefined' !== typeof(op.value)){                       
-                        valFloat = parseFloat(Ethplorer.Utils.toBig(op.value).toString());
-                        valFloat =  valFloat / Math.pow(10, opToken.decimals)
+                        valFloat = parseFloat(Ethplorer.Utils.toBig(op.value).toString());                        
+                        valFloat = valFloat / Math.pow(10, opToken.decimals);
                         if(Ethplorer.Utils.isSafari()){
                             op.value = valFloat;
                         }else{
@@ -1291,7 +1291,7 @@ Ethplorer = {
                     if(!tx.isEth){ 
                         var k = Math.pow(10, txToken.decimals);
                         if(Ethplorer.Utils.isSafari()){
-                            qty = qty / Math.pow(10, k);
+                            qty = qty / k;
                         }else{
                             qty = parseFloat(Ethplorer.Utils.toBig(tx.value).div(k).toString());
                         }
