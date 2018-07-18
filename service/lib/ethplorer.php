@@ -997,13 +997,13 @@ class Ethplorer {
                     if(defined('ETHPLORER_SHOW_OUTPUT')){
                         echo $address . " was recently updated (transfers count = " . $aToken['transfersCount'] . ")\n";
                     }
-                    $aResult[$address]['issuancesCount'] = $this->getContractOperationCount(array('$in' => array('issuance', 'burn', 'mint')), $address, FALSE);
-                    $hc = $this->getTokenHoldersCount($address);;
+                    $aResult[$address]['issuancesCount'] = (int)$this->oMongo->count('operations', ['contract' => $address, 'type' => ['$in' => ['issuance', 'burn', 'mint']]]);
+                    $hc = $this->getTokenHoldersCount($address);
                     if(FALSE !== $hc){
                         $aResult[$address]['holdersCount'] = $hc;
                     }
                 }else if(!isset($aPrevTokens[$address]) || !isset($aPrevTokens[$address]['issuancesCount'])){
-                    $aResult[$address]['issuancesCount'] = $this->getContractOperationCount(array('$in' => array('issuance', 'burn', 'mint')), $address, FALSE);
+                    $aResult[$address]['issuancesCount'] = (int)$this->oMongo->count('operations', ['contract' => $address, 'type' => ['$in' => ['issuance', 'burn', 'mint']]]);
                 }else{
                     $aResult[$address]['issuancesCount'] = isset($aPrevTokens[$address]['issuancesCount']) ? $aPrevTokens[$address]['issuancesCount'] : 0;
                     $aResult[$address]['holdersCount'] = isset($aPrevTokens[$address]['holdersCount']) ? $aPrevTokens[$address]['holdersCount'] : 0;
@@ -1026,7 +1026,9 @@ class Ethplorer {
                 foreach($cursor2 as $aCachedData) break;
                 if(false !== $aCachedData){
                     $aResult[$address]['txsCount'] = $aCachedData['txsCount'];
-                    if(isset($aCachedData['ethTransfersCount'])) $aResult[$address]['ethTransfersCount'] = $aCachedData['ethTransfersCount'];
+                    if(isset($aCachedData['ethTransfersCount'])) {
+                        $aResult[$address]['ethTransfersCount'] = $aCachedData['ethTransfersCount'];
+                    }
                 }
             }
             if(isset($aResult[self::ADDRESS_ETH])){
@@ -1134,66 +1136,60 @@ class Ethplorer {
      */
     public function getToken($address, $fast = FALSE){
         // evxProfiler::checkpoint('getToken', 'START', 'address=' . $address);
-        $cache = 'token-' . $address;
-        if($fast){
+        if ($fast) {
             $aTokens = $this->getTokens();
             $result = isset($aTokens[$address]) ? $aTokens[$address] : false;
-            if($result && is_array($result)){
-                unset($result["_id"]);
-                $price = $this->getTokenPrice($address);
-                if(is_array($price)){
-                    $price['currency'] = 'USD';
-                }
-                $result['price'] = $price ? $price : false;
-            }
-            return $result;
-        }
-        $result = $this->oCache->get($cache, false, true, 30);
-        if(FALSE === $result){
-            $aTokens = $this->getTokens();
-            $result = isset($aTokens[$address]) ? $aTokens[$address] : false;
-            if($result){
-                unset($result["_id"]);
-                $result += array('txsCount' => 0, 'transfersCount' => 0, 'ethTransfersCount' => 0, 'issuancesCount' => 0, 'holdersCount' => 0, "symbol" => "");
-                if(!isset($result['decimals']) || !intval($result['decimals'])){
-                    $result['decimals'] = 0;
-                    if(isset($result['totalSupply']) && ((float)$result['totalSupply'] > 1e+18)){
-                        $result['decimals'] = 18;
-                        $result['estimatedDecimals'] = true;
+            unset($result["_id"]);
+        } else {
+            $cache = 'token-' . $address;
+            $result = $this->oCache->get($cache, false, true, 30);
+            if (FALSE === $result) {
+                $aTokens = $this->getTokens();
+                $result = isset($aTokens[$address]) ? $aTokens[$address] : false;
+                if ($result) {
+                    unset($result["_id"]);
+                    $result += array('txsCount' => 0, 'transfersCount' => 0, 'ethTransfersCount' => 0, 'issuancesCount' => 0, 'holdersCount' => 0, "symbol" => "");
+                    if(!isset($result['decimals']) || !intval($result['decimals'])){
+                        $result['decimals'] = 0;
+                        if(isset($result['totalSupply']) && ((float)$result['totalSupply'] > 1e+18)){
+                            $result['decimals'] = 18;
+                            $result['estimatedDecimals'] = true;
+                        }
                     }
+    
+                    // Ask DB for fresh counts
+                    $cursor = $this->oMongo->find('tokens', array('address' => $address), array(), false, false, array('txsCount', 'transfersCount'));
+                    $token = false;
+                    if($cursor){
+                        foreach($cursor as $token){
+                            break;
+                        }
+                    }
+                    if($token){
+                        $result['txsCount'] = $token['txsCount'];
+                        $result['transfersCount'] = $token['transfersCount'];
+                    }
+                    
+                    $result['txsCount'] = (int)$result['txsCount'] + 1; // Contract creation tx
+                    
+                    if(isset($this->aSettings['client']) && isset($this->aSettings['client']['tokens'])){
+                        $aClientTokens = $this->aSettings['client']['tokens'];
+                        if(isset($aClientTokens[$address])){
+                            $aClientToken = $aClientTokens[$address];
+                            if(isset($aClientToken['name'])){
+                                $result['name'] = $aClientToken['name'];
+                            }
+                            if(isset($aClientToken['symbol'])){
+                                $result['symbol'] = $aClientToken['symbol'];
+                            }
+                        }
+                    }
+                    $this->oCache->save($cache, $result);
                 }
+            }
+        }
 
-                // Ask DB for fresh counts
-                $cursor = $this->oMongo->find('tokens', array('address' => $address), array(), false, false, array('txsCount', 'transfersCount'));
-                $token = false;
-                if($cursor){
-                    foreach($cursor as $token){
-                        break;
-                    }
-                }
-                if($token){
-                    $result['txsCount'] = $token['txsCount'];
-                    $result['transfersCount'] = $token['transfersCount'];
-                }
-                
-                $result['txsCount'] = (int)$result['txsCount'] + 1; // Contract creation tx
-                
-                if(isset($this->aSettings['client']) && isset($this->aSettings['client']['tokens'])){
-                    $aClientTokens = $this->aSettings['client']['tokens'];
-                    if(isset($aClientTokens[$address])){
-                        $aClientToken = $aClientTokens[$address];
-                        if(isset($aClientToken['name'])){
-                            $result['name'] = $aClientToken['name'];
-                        }
-                        if(isset($aClientToken['symbol'])){
-                            $result['symbol'] = $aClientToken['symbol'];
-                        }
-                    }
-                }
-                $this->oCache->save($cache, $result);
-            }
-        }
-        if(is_array($result)){
+        if(is_array($result)) { 
             $price = $this->getTokenPrice($address);
             if(is_array($price)){
                 $price['currency'] = 'USD';
@@ -2290,14 +2286,20 @@ class Ethplorer {
                 $result += (int)$this->oMongo->count('operations', array_merge($search, array($field => array('$regex' => $this->filter))));
             }
         }else{
-            $aToken = $this->getToken($address);
-            if(('transfer' === $type) && $aToken){
-                if($countEth) $result = isset($aToken['ethTransfersCount']) ? $aToken['ethTransfersCount'] : 0;
-                else $result = isset($aToken['transfersCount']) ? $aToken['transfersCount'] : 0;
-            }else{
-                if(!$countEth) $result = (int)$this->oMongo->count('operations', $search);
-            }
-            if($countEth && ('transfer' === $type) && $aToken && !isset($aToken['ethTransfersCount'])){
+            if ($type === 'transfer') {
+                $aToken = $this->getToken($address);
+                if ($aToken) {
+                    if($countEth) {
+                        $result = isset($aToken['ethTransfersCount']) 
+                            ? $aToken['ethTransfersCount'] 
+                            : (int)$this->oMongo->count('operations', $search);
+                    } else {
+                        $result = isset($aToken['transfersCount']) ? $aToken['transfersCount'] : 0;
+                    }
+                } elseif (!$countEth) {
+                    $result = (int)$this->oMongo->count('operations', $search);
+                }
+            } elseif (!$countEth) {
                 $result = (int)$this->oMongo->count('operations', $search);
             }
         }
