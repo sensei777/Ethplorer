@@ -1135,6 +1135,7 @@ class Ethplorer {
     public function getToken($address, $fast = FALSE){
         // evxProfiler::checkpoint('getToken', 'START', 'address=' . $address);
         $cache = 'token-' . $address;
+        $GLOBALS['recursion'] = 'getTokens';
         if($fast){
             $aTokens = $this->getTokens();
             $result = isset($aTokens[$address]) ? $aTokens[$address] : false;
@@ -2290,8 +2291,10 @@ class Ethplorer {
                 $result += (int)$this->oMongo->count('operations', array_merge($search, array($field => array('$regex' => $this->filter))));
             }
         }else{
-            $aToken = $this->getToken($address);
-            if(('transfer' === $type) && $aToken){
+            if (!isset($GLOBALS['recursion'])) {
+                $aToken = $this->getToken($address);
+            }
+            if(('transfer' === $type) && !empty($aToken)) {
                 if($countEth) $result = isset($aToken['ethTransfersCount']) ? $aToken['ethTransfersCount'] : 0;
                 else $result = isset($aToken['transfersCount']) ? $aToken['transfersCount'] : 0;
             }else{
