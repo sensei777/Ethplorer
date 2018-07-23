@@ -3200,6 +3200,9 @@ class Ethplorer {
             if(isset($json["result"])){
                 $result = $json["result"];
             }
+            if(isset($json["error"])){
+                $result = ["error" => $json["error"]];
+            }
         }
         return $result;
     }
