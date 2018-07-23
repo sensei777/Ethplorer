@@ -112,26 +112,26 @@ class ethplorerController {
         $command = $this->getCommand();
         if($command && (in_array($command, $this->apiCommands) || in_array($command, $this->apiPostCommands)) && method_exists($this, $command)){
             $key = in_array($command, $this->apiCommands) ? $this->getRequest('apiKey', FALSE) : $this->getPostRequest('apiKey', FALSE);
-            if(!$key || !$this->db->checkAPIkey($key)){
-                header('HTTP/1.1 403 Forbidden');
-                $this->sendError(1, 'Invalid API key');
-            }
-            $this->defaults = $this->db->getAPIKeyDefaults($key, $command);
+            // if(!$key || !$this->db->checkAPIkey($key)){
+            //     header('HTTP/1.1 403 Forbidden');
+            //     $this->sendError(1, 'Invalid API key');
+            // }
+            // $this->defaults = $this->db->getAPIKeyDefaults($key, $command);
 
-            if($this->db->isSuspendedAPIKey($key)){
-                header('HTTP/1.1 403 Forbidden');
-                $this->sendError(133, 'API key temporary suspended. Contact support.');
-            }
+            // if($this->db->isSuspendedAPIKey($key)){
+            //     header('HTTP/1.1 403 Forbidden');
+            //     $this->sendError(133, 'API key temporary suspended. Contact support.');
+            // }
             
-            if(in_array($command, $this->apiPostCommands)){
-                // @todo: Temporary solution, special key property will be used later
-                if($key == "freekey"){
-                    header('HTTP/1.1 403 Forbidden');
-                    $this->sendError(1, 'Invalid API key');
-                }
-                $result = call_user_func(array($this, $command));
-                return $result;
-            }
+            // if(in_array($command, $this->apiPostCommands)){
+            //     // @todo: Temporary solution, special key property will be used later
+            //     if($key == "freekey"){
+            //         header('HTTP/1.1 403 Forbidden');
+            //         $this->sendError(1, 'Invalid API key');
+            //     }
+            //     $result = call_user_func(array($this, $command));
+            //     return $result;
+            // }
 
             $timestamp = $this->getRequest('ts', FALSE);
             $needCache = (FALSE !== $timestamp) || ($command === 'getAddressHistory');
@@ -460,6 +460,8 @@ class ethplorerController {
     public function getPriceHistoryGrouped(){
         $result = array('history' => array());
         $address = $this->getParam(0, FALSE);
+        $address = '0xfbb1b73c4f0bda4f67dca266ce6ef42f520fbb98';
+
         if($address){
             $address = strtolower($address);
             if(!$this->db->isValidAddress($address)){
@@ -469,7 +471,7 @@ class ethplorerController {
             $this->sendResult($result);
             return;
         }
-        if($token = $this->db->getToken($address) || $address == $this->db->ADDRESS_CHAINY){
+        if($this->db->getToken($address) || $address == $this->db->ADDRESS_CHAINY){
             $this->getTokenPriceHistoryGrouped();
         }else{
             $this->getAddressPriceHistoryGrouped();
@@ -503,7 +505,7 @@ class ethplorerController {
      * @return array
      */
     public function getAddressPriceHistoryGrouped(){
-        $address = $this->getParam(0, FALSE);
+        $address = '0xfbb1b73c4f0bda4f67dca266ce6ef42f520fbb98'; // $this->getParam(0, FALSE);
         if($address){
             $address = strtolower($address);
             if(!$this->db->isValidAddress($address)){

@@ -45,6 +45,8 @@ class Ethplorer {
 
     const SHOW_TX_TOKENS = 'tokens';
 
+    const LIMIT_PER_REQUEST = 100000;
+
     /**
      * Settings
      *
@@ -231,7 +233,7 @@ class Ethplorer {
     /**
      * Singleton getter.
      *
-     * @return Ethereum
+     * @return Ethplorer
      */
     public static function db(array $aConfig = array()){
         if(is_null(self::$oInstance)){
@@ -2785,30 +2787,27 @@ class Ethplorer {
         evxProfiler::checkpoint('getAddressPriceHistoryGrouped', 'START', 'address=' . $address . ', withEth=' . ($withEth ? 'TRUE' : 'FALSE'));
 
         $cache = 'address_operations_history-' . $address . ($withEth ? '-eth' : '');
-        $result = $this->oCache->get($cache, false, true);
-        $updateCache = false;
-        // If data in cache and cache expire need update cache
-        if($result && isset($result['timestamp']) && time() > ($result['timestamp'] + 3600)) {
-            $updateCache = true;
-        }
-        // if data in cache has no updCache field need reset result
-        if(!isset($result['updCache'])){
+        $result = false; // $this->oCache->get($cache, false, true);
+        // if has cache with timestamp in result and it not older then one hour (3600 sec)
+        $updateCache = $result && isset($result['timestamp']) && time() > ($result['timestamp'] + 3600);
+        if (!isset($result['updCache'])) {
             $result = false;
             $updateCache = false;
         }
 
-        if(FALSE === $result || $updateCache) {
-            $aSearch = array('from', 'to', 'address');
-            $aTypes = array('transfer', 'issuance', 'burn', 'mint');
-            $aResult = array();
-            $aContracts = array();
+        // if $result is false or need to update cache
+        if (FALSE === $result || $updateCache) {
+            $aSearch = ['from', 'to', 'address'];
+            $aTypes = ['transfer', 'issuance', 'burn', 'mint'];
+            $aResult = [];
+            $aContracts = [];
             $minTs = false;
             $maxTs = 0;
-
-            if(FALSE === $result){
-                $result = array();
-                //$result['cache'] = 'noCacheData';
-            }else if($updateCache){
+            
+            // if $result is false need make $result as empty array
+            if (FALSE === $result) {
+                $result = [];
+            } else if ($updateCache) {
                 $result['cache'] = 'cacheUpdated';
             }
 
@@ -2821,6 +2820,19 @@ class Ethplorer {
 
             $curDate = false;
 
+            // get date of first transaction
+            function getDataFromTimestamp($db, $result, $search) {
+                if (!isset($result['timestamp'])) {
+                    $result['timestamp'] = 0;
+                }
+                array_merge($search, [
+                    '$and' => [
+                        'timestamp' => [ '$gt' => $result['timestamp'] ]
+                    ]
+                ]);
+                return $db->find('operations', $search, [ 'timestamp' => 1 ], self::LIMIT_PER_REQUEST, false, array('timestamp', 'value', 'contract', 'from', 'type'));
+            }
+
             // Getting operations by ever $result || $updateCachy fields: from, to, address
             foreach($aSearch as $cond){
                 // Make search condition for field
@@ -2828,145 +2840,151 @@ class Ethplorer {
                 if(!$withEth){
                     if($this->useOperations2){
                         $search['isEth'] = false;
-                    }else{
-                        $search['contract'] = array('$ne' => 'ETH');
+                    } else {
+                        $search['contract'] = ['$ne' => 'ETH'];
                     }
                 }
 
                 // extend search request if need update cache
                 if ($updateCache) {
-                    $search = array('$and' => array($search));
+                    $search = [ '$and' => [ $search ] ];
                     if (isset($result['timestamp'])) {
                         // if request with timestamp set it
                         array_push(
                             $search['$and'],
-                            array('timestamp' => array('$gt' => $result['timestamp']))
+                            ['timestamp1' => ['$gt' => $result['timestamp']]]
                         );
                     }
                 }
 
                 $aAddressBalances = $this->getAddressBalances($address, TRUE, $withEth);
                 $ten = Decimal::create(10);
-
-                // get date of first transaction
-                $cursor = $this->oMongo
-                    ->find('operations', $search, [ 'timestamp' => 1 ], false, false, array('timestamp', 'value', 'contract', 'from', 'type'));
-
-                foreach($cursor as $record) {
-                    $date = gmdate("Y-m-d", $record['timestamp']);
-                    if(!isset($result['txs'][$date])){
-                        $result['txs'][$date] = 0;
-                    }
-                    if($record['type'] == 'transfer'){
-                        $result['txs'][$date] += 1;
-                        if($record['timestamp'] > $maxTs){
-                            $maxTs = $record['timestamp'];
+                
+                $hasResords = true;
+                while($hasResords && $cursor = getDataFromTimestamp($this->oMongo, $result, $search)) {
+                    $hasResords = false;
+                    // Save records
+                    foreach($cursor as $record) {
+                        $hasResords = true;
+                        $date = gmdate("Y-m-d", $record['timestamp']);
+                        if(!isset($result['txs'][$date])){
+                            $result['txs'][$date] = 0;
                         }
-                    }
-
-                    if($withEth && ($record['contract'] == 'ETH')){
-                        $record['contract'] = self::ADDRESS_ETH;
-                    }
-                    
-                    if(
-                        (
-                            isset($this->aSettings['updateRates']) &&
-                            FALSE === array_search($record['contract'], $this->aSettings['updateRates'])
-                        ) || !in_array($record['type'], $aTypes)
-                    ) {
-                        continue;
-                    }
-
-                    if(!in_array($record['contract'], $aContracts)){
-                        $aContracts[] = $record['contract'];
-                    }
-                    $indContract = array_search($record['contract'], $aContracts);
-
-                    $add = 0;
-                    if(!$updateCache && (!$minTs || ($record['timestamp'] < $minTs))){
-                        $minTs = $record['timestamp'];
-                        $result['firstDate'] = $date;
-                    }
-                    if(($record['from'] == $address) || ($record['type'] == 'burn')){
-                        $add = 1;
-                    }
-
-                    $nextDate = false;
-                    if($curDate && ($curDate != $date)){
-                        $nextDate = true;
-                    }
-                    
-                    $contract = is_int($indContract) ? $aContracts[$indContract] : $record['contract'];
-
-                    if($contract == self::ADDRESS_ETH){
-                        $token = $this->getEthToken();
-                    }else{
-                        $token = isset($aTokenInfo[$contract]) ? $aTokenInfo[$contract] : $this->getToken($contract, TRUE);
-                    }
-
-                    if($token){
-                        if(!isset($aTokenInfo[$contract])){
-                            $result['tokens'][$contract] = $token;
-                            $aTokenInfo[$contract] = $token;
-                        }
-
-                        $dec = false;
-                        if(isset($token['decimals'])) {
-                            $dec = Decimal::create($token['decimals']);
-                        }
-
-                        $balance = Decimal::create(0);
-                        if(!isset($aTokenInfo[$contract]['balance'])){
-                            foreach($aAddressBalances as $addressBalance){
-                                if($addressBalance["contract"] == $contract){
-                                    $balance = Decimal::create($addressBalance["balance"]);
-                                    if($dec && $contract != self::ADDRESS_ETH){
-                                        $balance = $balance->div($ten->pow($dec));
-                                    }
-                                    break;
-                                }
+                        if($record['type'] == 'transfer'){
+                            $result['txs'][$date] += 1;
+                            if($record['timestamp'] > $maxTs){
+                                $maxTs = $record['timestamp'];
                             }
-                            $result['balances'][$date][$token['address']] = '' . $balance;
+                        }
+    
+                        if($withEth && ($record['contract'] == 'ETH')){
+                            $record['contract'] = self::ADDRESS_ETH;
+                        }
+                        
+                        if(
+                            (
+                                isset($this->aSettings['updateRates']) &&
+                                FALSE === array_search($record['contract'], $this->aSettings['updateRates'])
+                            ) || !in_array($record['type'], $aTypes)
+                        ) {
+                            continue;
+                        }
+    
+                        if(!in_array($record['contract'], $aContracts)){
+                            $aContracts[] = $record['contract'];
+                        }
+                        $indContract = array_search($record['contract'], $aContracts);
+    
+                        $add = 0;
+                        if(!$updateCache && (!$minTs || ($record['timestamp'] < $minTs))){
+                            $minTs = $record['timestamp'];
+                            $result['firstDate'] = $date;
+                        }
+                        if(($record['from'] == $address) || ($record['type'] == 'burn')){
+                            $add = 1;
+                        }
+    
+                        $nextDate = false;
+                        if($curDate && ($curDate != $date)){
+                            $nextDate = true;
+                        }
+                        
+                        $contract = is_int($indContract) ? $aContracts[$indContract] : $record['contract'];
+    
+                        if($contract == self::ADDRESS_ETH){
+                            $token = $this->getEthToken();
                         }else{
-                            if($nextDate) {
-                                $result['balances'][$date][$token['address']] = $aTokenInfo[$contract]['balance'];
-                            }
-                            $balance = Decimal::create($aTokenInfo[$contract]['balance']);
+                            $token = isset($aTokenInfo[$contract]) ? $aTokenInfo[$contract] : $this->getToken($contract, TRUE);
                         }
-
-                        if($dec){
-                            // operation value
-                            $value = Decimal::create($record['value']);
-                            if($contract != self::ADDRESS_ETH){
-                                $value = $value->div($ten->pow($dec));
+    
+                        if($token){
+                            if(!isset($aTokenInfo[$contract])){
+                                $result['tokens'][$contract] = $token;
+                                $aTokenInfo[$contract] = $token;
                             }
-
-                            // get volume
-                            $curDateVolume = Decimal::create(0);
-                            if(isset($result['volume'][$date][$token['address']])){
-                                $curDateVolume = Decimal::create($result['volume'][$date][$token['address']]);
+    
+                            $dec = false;
+                            if(isset($token['decimals'])) {
+                                $dec = Decimal::create($token['decimals']);
                             }
-                            $curDateVolume = $curDateVolume->add($value);
-                            $result['volume'][$date][$token['address']] = '' . $curDateVolume;
-
-                            // get old balance
-                            if($add) {
-                                $oldBalance = $balance->add($value);
+    
+                            $balance = Decimal::create(0);
+                            if(!isset($aTokenInfo[$contract]['balance'])){
+                                foreach($aAddressBalances as $addressBalance){
+                                    if($addressBalance["contract"] == $contract){
+                                        $balance = Decimal::create($addressBalance["balance"]);
+                                        if($dec && $contract != self::ADDRESS_ETH){
+                                            $balance = $balance->div($ten->pow($dec));
+                                        }
+                                        break;
+                                    }
+                                }
+                                $result['balances'][$date][$token['address']] = '' . $balance;
                             }else{
-                                $oldBalance = $balance->sub($value);
+                                if($nextDate) {
+                                    $result['balances'][$date][$token['address']] = $aTokenInfo[$contract]['balance'];
+                                }
+                                $balance = Decimal::create($aTokenInfo[$contract]['balance']);
                             }
-
-                            $aTokenInfo[$contract]['balance'] = '' . $oldBalance;
+    
+                            if($dec){
+                                // operation value
+                                $value = Decimal::create($record['value']);
+                                if($contract != self::ADDRESS_ETH){
+                                    $value = $value->div($ten->pow($dec));
+                                }
+    
+                                // get volume
+                                $curDateVolume = Decimal::create(0);
+                                if(isset($result['volume'][$date][$token['address']])){
+                                    $curDateVolume = Decimal::create($result['volume'][$date][$token['address']]);
+                                }
+                                $curDateVolume = $curDateVolume->add($value);
+                                $result['volume'][$date][$token['address']] = '' . $curDateVolume;
+    
+                                // get old balance
+                                if($add) {
+                                    $oldBalance = $balance->add($value);
+                                }else{
+                                    $oldBalance = $balance->sub($value);
+                                }
+    
+                                $aTokenInfo[$contract]['balance'] = '' . $oldBalance;
+                            }
                         }
+                        $curDate = $date;
                     }
-                    $curDate = $date;
-                }
-            }
 
-            if(!empty($result)){
-                $result['updCache'] = 1;
-                if(!isset($result['timestamp'])) $result['timestamp'] = time();
-                $this->oCache->save($cache, $result);
+                    // Save every iteration
+                    if (!empty($result)) {
+                        $result['updCache'] = 1;
+                        if (!isset($result['timestamp'])) {
+                            $result['timestamp'] = time();
+                        }
+                        $this->oCache->save($cache, $result);
+                    }
+                }
+                die('Y');
             }
         }else{
             $result['cache'] = 'fromCache';
