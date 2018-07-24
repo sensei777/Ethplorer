@@ -2796,8 +2796,15 @@ class Ethplorer {
             $result = false;
             $updateCache = false;
         }
-
+        
         if(FALSE === $result || $updateCache){
+            
+            $opCount = $this->countOperations($address, FALSE);
+            if($opCount >= 10000){
+                evxProfiler::checkpoint('getAddressPriceHistoryGrouped', 'FINISH', 'Address has >10000 operations, skip');
+                return FALSE;                
+            }
+
             $aSearch = array('from', 'to', 'address');
             $aTypes = array('transfer', 'issuance', 'burn', 'mint');
             $aResult = array();
