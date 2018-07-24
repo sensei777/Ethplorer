@@ -1309,7 +1309,9 @@ Ethplorer = {
                     var to = tx.to ? ((tx.to !== address) ? Ethplorer.Utils.getEthplorerLink(tx.to) : ('<span class="same-address">' + address + '</span>')) : false;
                     var _address = (tx.address && (tx.address === address )) ? ('<span class="same-address">' + address + '</span>') : tx.address;
                     var rowClass = '';
-                    if(from && (tx.from === address)){
+                    if(from && to && (tx.from === address) && (tx.to === address)){
+                        rowClass = 'self';
+                    }else if(from && (tx.from === address)){
                         value = '-' + value;
                         rowClass = 'outgoing';
                     }else if(to && (tx.to === address)){
