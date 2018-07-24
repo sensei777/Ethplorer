@@ -2991,8 +2991,14 @@ class Ethplorer {
         return $result;
     }
 
-    public function createPool($addresses = NULL){
-        return $this->_jsonrpcall($this->aSettings['pools'], 'createPool', array($addresses));
+    /**
+     * Create pool
+     * @param String $apiKey
+     * @param String $addresses
+     * @return Array
+     */
+    public function createPool($apiKey, $addresses = NULL){
+        return $this->_jsonrpcall($this->aSettings['pools'], 'createPool', array($apiKey, $addresses));
     }
 
     public function deletePool($poolId = NULL){
@@ -3000,7 +3006,10 @@ class Ethplorer {
     }
 
     public function updatePool($method = NULL, $poolId = NULL, $addresses = NULL){
-        return $this->_jsonrpcall($this->aSettings['pools'], 'updatePool', array($method, $poolId, $addresses));
+        $response = $this->_jsonrpcall($this->aSettings['pools'], 'updatePool', array($method, $poolId, $addresses));
+        // clean cache
+        $this->oCache->delete('pool_addresses-' . $poolId, false);
+        return $response;
     }
 
     /**
