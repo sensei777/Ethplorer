@@ -530,13 +530,13 @@ class ethplorerController {
     }
 
     public function createPool(){
+        $apiKey = $this->getPostRequest('apiKey');
         $addresses = $this->getPostRequest('addresses');
-        $poolId = $this->db->createPool($addresses);
-        if(!$poolId){
+        $pool = $this->db->createPool($apiKey, $addresses);
+        if(!$pool){
             $this->sendError(105, 'Error creating pool');
         }
-        $result = array('poolId' => $poolId);
-        $this->sendResult($result);
+        $this->sendResult($pool);
     }
 
     public function deletePool(){

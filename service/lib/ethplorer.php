@@ -2984,8 +2984,14 @@ class Ethplorer {
         return $result;
     }
 
-    public function createPool($addresses = NULL){
-        return $this->_jsonrpcall($this->aSettings['pools'], 'createPool', array($addresses));
+    /**
+     * Create pool
+     * @param String $apiKey
+     * @param String $addresses
+     * @return Array
+     */
+    public function createPool($apiKey, $addresses = NULL){
+        return $this->_jsonrpcall($this->aSettings['pools'], 'createPool', array($apiKey, $addresses));
     }
 
     public function deletePool($poolId = NULL){
