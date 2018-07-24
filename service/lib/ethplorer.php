@@ -3007,7 +3007,7 @@ class Ethplorer {
         $cache = 'pool_addresses-' . $poolId;
         $aAddresses = $this->oCache->get($cache, false, true, 600);
         if($updateCache || (false === $aAddresses)){
-            $cursor = $this->oMongoPools->find('pools', array('id' => $poolId));
+            $cursor = $this->oMongoPools->find('pools', array('uid' => $poolId));
             $result = array();
             foreach($cursor as $result) break;
             if($result){
