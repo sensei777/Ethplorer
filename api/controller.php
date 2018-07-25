@@ -587,7 +587,7 @@ class ethplorerController {
      * @return array
      */
     public function getPoolAddresses(){
-        $poolId = $this->getRequest('poolId', FALSE);
+        $poolId = $this->getParam(1, FALSE);
         if (!$poolId) {
             $this->sendError(106, 'Invalid pool id', 400);
         }
