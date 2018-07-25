@@ -543,7 +543,7 @@ class ethplorerController {
     public function deletePool(){
         $poolId = $this->getPostRequest('poolId');
         if (!$poolId) {
-            $this->sendError(106, 'Missing pool ID', 400);
+            $this->sendError(106, 'Invalid pool id', 400);
         }
         $response = $this->db->deletePool($poolId);
         if (isset($response['error'])) {
@@ -566,16 +566,16 @@ class ethplorerController {
 
     public function updatePool($method = FALSE){
         if(!$method){
-            $this->sendError(107, 'Missing method name', 400);
+            $this->sendError(107, 'Invalid method name', 400);
         }
         $poolId = $this->getPostRequest('poolId');
         if(!$poolId){
-            $this->sendError(106, 'Missing pool ID', 400);
+            $this->sendError(106, 'Invalid pool id', 400);
         }
         $addresses = $this->getPostRequest('addresses');
         $response = $this->db->updatePool($method, $poolId, $addresses);
         if (isset($response['error'])) {
-            $this->sendError(109, 'Fail update the pool', 400);
+            $this->sendError(109, 'Error update the pool', 400);
         }
         $this->sendResult($response);
     }
@@ -589,7 +589,7 @@ class ethplorerController {
     public function getPoolAddresses(){
         $poolId = $this->getRequest('poolId', FALSE);
         if (!$poolId) {
-            $this->sendError(106, 'Missing pool ID', 400);
+            $this->sendError(106, 'Invalid pool id', 400);
         }
         $result = array('addresses' => $this->db->getPoolAddresses($poolId));
         $this->sendResult($result);
@@ -604,7 +604,7 @@ class ethplorerController {
     public function getPoolLastTransactions() {
         $poolId = $this->getRequest('poolId', FALSE);
         if (!$poolId) {
-            $this->sendError(106, 'Missing pool ID', 400);
+            $this->sendError(106, 'Invalid pool id', 400);
         }
         $period = max(min(abs((int)$this->getRequest('period', 600)), 864000), 1);
         $result = $this->db->getPoolLastTransactions($poolId, $period);
@@ -620,7 +620,7 @@ class ethplorerController {
     public function getPoolLastOperations() {
         $poolId = $this->getRequest('poolId', FALSE);
         if (!$poolId) {
-            $this->sendError(106, 'Missing pool ID', 400);
+            $this->sendError(106, 'Invalid pool id', 400);
         }
         $period = max(min(abs((int)$this->getRequest('period', 600)), 864000), 1);
         $result = $this->db->getPoolLastOperations($poolId, $period);
