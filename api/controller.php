@@ -602,7 +602,7 @@ class ethplorerController {
      * @return array
      */
     public function getPoolLastTransactions() {
-        $poolId = $this->getRequest('poolId', FALSE);
+        $poolId = $this->getParam(1, FALSE);
         if (!$poolId) {
             $this->sendError(106, 'Invalid pool id', 400);
         }
@@ -618,7 +618,7 @@ class ethplorerController {
      * @return array
      */
     public function getPoolLastOperations() {
-        $poolId = $this->getRequest('poolId', FALSE);
+        $poolId = $this->getParam(1, FALSE);
         if (!$poolId) {
             $this->sendError(106, 'Invalid pool id', 400);
         }
