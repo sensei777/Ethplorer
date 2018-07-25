@@ -136,6 +136,8 @@ class Ethplorer {
 
     protected $useOperations2 = FALSE;
 
+    protected $getTokensCacheCreation = FALSE;
+
     /**
      * Constructor.
      *
@@ -977,7 +979,10 @@ class Ethplorer {
             return $this->aTokens;
         }
         $aResult = $this->oCache->get('tokens', false, true);
-        if($updateCache || (false === $aResult)){
+        if(!$this->getTokensCacheCreation && ($updateCache/* || (false === $aResult)*/)){
+            // Recursion protection
+            $this->getTokensCacheCreation = true;
+
             evxProfiler::checkpoint('getTokens', 'START');
             $aPrevTokens = array();
             if($updateCache){
@@ -995,9 +1000,7 @@ class Ethplorer {
                 unset($aToken["_id"]);
                 $aResult[$address] = $aToken;
                 if(!isset($aPrevTokens[$address]) || ($aPrevTokens[$address]['transfersCount'] < $aToken['transfersCount'])){
-                    if(defined('ETHPLORER_SHOW_OUTPUT')){
-                        echo $address . " was recently updated (transfers count = " . $aToken['transfersCount'] . ")\n";
-                    }
+                    $this->_cliDebug($address . " was recently updated (transfers count = " . $aToken['transfersCount'] . ")");
                     $aResult[$address]['issuancesCount'] = $this->getContractOperationCount(array('$in' => array('issuance', 'burn', 'mint')), $address, FALSE);
                     $hc = $this->getTokenHoldersCount($address);;
                     if(FALSE !== $hc){
@@ -2081,7 +2084,7 @@ class Ethplorer {
     public function getTokenHistoryGrouped($period = 30, $address = FALSE, $type = 'daily', $cacheLifetime = 1800, $showEth = FALSE, $updateCache = FALSE){
         $cache = 'token_history_grouped-' . ($address ? ($address . '-') : '') . $period . (($type == 'hourly') ? '-hourly' : '') . ($showEth ? '-eth' : '');
         $result = $address ? $this->oCache->get($cache, false, true, $cacheLifetime) : $this->oCache->get($cache, false, true);
-        if(FALSE === $result || $updateCache){
+         if(($address && FALSE === $result) || $updateCache){
             // Chainy
             if($address && ($address == self::ADDRESS_CHAINY)){
                 return $this->getChainyTokenHistoryGrouped($period);
@@ -2796,9 +2799,16 @@ class Ethplorer {
             $result = false;
             $updateCache = false;
         }
-
+        
         if(FALSE === $result || $updateCache){
-            $aSearch = array('from', 'to', 'address');
+            
+            $opCount = $this->countOperations($address, FALSE);
+            if($opCount >= 10000){
+                evxProfiler::checkpoint('getAddressPriceHistoryGrouped', 'FINISH', 'Address has >10000 operations, skip');
+                return FALSE;                
+            }
+
+            $aSearch = array('from', 'to', 'address'); // @todo: research "addresses"
             $aTypes = array('transfer', 'issuance', 'burn', 'mint');
             $aResult = array();
             $aContracts = array();
@@ -3313,7 +3323,8 @@ class Ethplorer {
     }
 
     protected function _cliDebug($message){
-        if(isset($this->aSettings['cliDebug']) && $this->aSettings['cliDebug'] && (php_sapi_name() === 'cli')){
+        $showDebug = ((isset($this->aSettings['cliDebug']) && $this->aSettings['cliDebug']) || defined('ETHPLORER_SHOW_OUTPUT')) && (php_sapi_name() === 'cli');
+        if($showDebug){
             echo '[' . date("Y-m-d H:i:s") . '] ' . $message . "\n";
         }
     }

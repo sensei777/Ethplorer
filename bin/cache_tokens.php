@@ -15,7 +15,9 @@
  * limitations under the License.
  */
 
-ini_set('memory_limit', '512M');
+ini_set('memory_limit', '1G');
+
+// define('ETHPLORER_SHOW_OUTPUT', 1);
 
 require dirname(__FILE__) . '/../service/lib/ethplorer.php';
 $aConfig = require_once dirname(__FILE__) . '/../service/config.php';
