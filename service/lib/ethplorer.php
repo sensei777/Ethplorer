@@ -979,7 +979,7 @@ class Ethplorer {
             return $this->aTokens;
         }
         $aResult = $this->oCache->get('tokens', false, true);
-        if(!$this->getTokensCacheCreation && ($updateCache || (false === $aResult))){
+        if(!$this->getTokensCacheCreation && ($updateCache/* || (false === $aResult)*/)){
             // Recursion protection
             $this->getTokensCacheCreation = true;
 
