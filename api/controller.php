@@ -549,7 +549,7 @@ class ethplorerController {
         if (isset($response['error'])) {
             $this->sendError(110, 'Error deleting pool', 400);
         }
-        $this->sendResult($result);
+        $this->sendResult($response);
     }
 
     public function addPoolAddresses(){
