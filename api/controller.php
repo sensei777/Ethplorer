@@ -84,22 +84,23 @@ class ethplorerController {
         return (FALSE !== $result) && (!is_null($result)) ? $result : $default;
     }
 
-    public function sendResult(array $result){
+    public function sendResult(array $result, $statusCode = 200){
         if($this->getRequest('debugId')){
             $result['debug'] = $this->db->getDebugData();
         }
+        http_response_code($statusCode);
         echo json_encode($result, JSON_UNESCAPED_SLASHES);
         die();
     }
 
-    public function sendError($code, $message){
+    public function sendError($code, $message, $statusCode = 200){
         $result = array(
             'error' => array(
                 'code' => $code,
                 'message' => $message
             )
         );
-        $this->sendResult($result);
+        $this->sendResult($result, $statusCode);
     }
 
     /**
@@ -532,19 +533,22 @@ class ethplorerController {
     public function createPool(){
         $apiKey = $this->getPostRequest('apiKey');
         $addresses = $this->getPostRequest('addresses');
-        $pool = $this->db->createPool($apiKey, $addresses);
-        if(!$pool){
-            $this->sendError(105, 'Error creating pool');
+        $response = $this->db->createPool($apiKey, $addresses);
+        if (isset($response['error'])) {
+            $this->sendError(105, 'Error creating pool', 400);
         }
-        $this->sendResult($pool);
+        $this->sendResult($response);
     }
 
     public function deletePool(){
         $poolId = $this->getPostRequest('poolId');
-        if(!$poolId){
-            $this->sendError(106, 'Missing pool ID');
+        if (!$poolId) {
+            $this->sendError(106, 'Missing pool ID', 400);
         }
-        $result = $this->db->deletePool($poolId);
+        $response = $this->db->deletePool($poolId);
+        if (isset($response['error'])) {
+            $this->sendError(110, 'Error deleting pool', 400);
+        }
         $this->sendResult($result);
     }
 
@@ -562,15 +566,18 @@ class ethplorerController {
 
     public function updatePool($method = FALSE){
         if(!$method){
-            $this->sendError(107, 'Missing method name');
+            $this->sendError(107, 'Missing method name', 400);
         }
         $poolId = $this->getPostRequest('poolId');
         if(!$poolId){
-            $this->sendError(106, 'Missing pool ID');
+            $this->sendError(106, 'Missing pool ID', 400);
         }
         $addresses = $this->getPostRequest('addresses');
-        $result = $this->db->updatePool($method, $poolId, $addresses);
-        $this->sendResult($result);
+        $response = $this->db->updatePool($method, $poolId, $addresses);
+        if (isset($response['error'])) {
+            $this->sendError(109, 'Fail update the pool', 400);
+        }
+        $this->sendResult($response);
     }
 
     /**
@@ -580,11 +587,11 @@ class ethplorerController {
      * @return array
      */
     public function getPoolAddresses(){
-        $result = array('addresses' => array());
         $poolId = $this->getRequest('poolId', FALSE);
-        if($poolId){
-            $result = array('addresses' => $this->db->getPoolAddresses($poolId));
+        if (!$poolId) {
+            $this->sendError(106, 'Missing pool ID', 400);
         }
+        $result = array('addresses' => $this->db->getPoolAddresses($poolId));
         $this->sendResult($result);
     }
 
@@ -594,13 +601,13 @@ class ethplorerController {
      * @undocumented
      * @return array
      */
-    public function getPoolLastTransactions(){
-        $result = array();
+    public function getPoolLastTransactions() {
         $poolId = $this->getRequest('poolId', FALSE);
-        $period = max(min(abs((int)$this->getRequest('period', 600)), 864000), 1);
-        if($poolId){
-            $result = $this->db->getPoolLastTransactions($poolId, $period);
+        if (!$poolId) {
+            $this->sendError(106, 'Missing pool ID', 400);
         }
+        $period = max(min(abs((int)$this->getRequest('period', 600)), 864000), 1);
+        $result = $this->db->getPoolLastTransactions($poolId, $period);
         $this->sendResult($result);
     }
 
@@ -610,13 +617,13 @@ class ethplorerController {
      * @undocumented
      * @return array
      */
-    public function getPoolLastOperations(){
-        $result = array();
+    public function getPoolLastOperations() {
         $poolId = $this->getRequest('poolId', FALSE);
-        $period = max(min(abs((int)$this->getRequest('period', 600)), 864000), 1);
-        if($poolId){
-            $result = $this->db->getPoolLastOperations($poolId, $period);
+        if (!$poolId) {
+            $this->sendError(106, 'Missing pool ID', 400);
         }
+        $period = max(min(abs((int)$this->getRequest('period', 600)), 864000), 1);
+        $result = $this->db->getPoolLastOperations($poolId, $period);
         $this->sendResult($result);
     }
 
