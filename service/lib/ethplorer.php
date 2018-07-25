@@ -136,6 +136,8 @@ class Ethplorer {
 
     protected $useOperations2 = FALSE;
 
+    protected $getTokensCacheCreation = FALSE;
+
     /**
      * Constructor.
      *
@@ -977,7 +979,10 @@ class Ethplorer {
             return $this->aTokens;
         }
         $aResult = $this->oCache->get('tokens', false, true);
-        if($updateCache || (false === $aResult)){
+        if(!$this->getTokensCacheCreation && ($updateCache || (false === $aResult))){
+            // Recursion protection
+            $this->getTokensCacheCreation = true;
+
             evxProfiler::checkpoint('getTokens', 'START');
             $aPrevTokens = array();
             if($updateCache){
@@ -2081,7 +2086,7 @@ class Ethplorer {
     public function getTokenHistoryGrouped($period = 30, $address = FALSE, $type = 'daily', $cacheLifetime = 1800, $showEth = FALSE, $updateCache = FALSE){
         $cache = 'token_history_grouped-' . ($address ? ($address . '-') : '') . $period . (($type == 'hourly') ? '-hourly' : '') . ($showEth ? '-eth' : '');
         $result = $address ? $this->oCache->get($cache, false, true, $cacheLifetime) : $this->oCache->get($cache, false, true);
-        if(FALSE === $result || $updateCache){
+         if(($address && FALSE === $result) || $updateCache){
             // Chainy
             if($address && ($address == self::ADDRESS_CHAINY)){
                 return $this->getChainyTokenHistoryGrouped($period);
@@ -2805,7 +2810,7 @@ class Ethplorer {
                 return FALSE;                
             }
 
-            $aSearch = array('from', 'to', 'address');
+            $aSearch = array('from', 'to', 'address'); // @todo: research "addresses"
             $aTypes = array('transfer', 'issuance', 'burn', 'mint');
             $aResult = array();
             $aContracts = array();
