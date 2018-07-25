@@ -1000,9 +1000,7 @@ class Ethplorer {
                 unset($aToken["_id"]);
                 $aResult[$address] = $aToken;
                 if(!isset($aPrevTokens[$address]) || ($aPrevTokens[$address]['transfersCount'] < $aToken['transfersCount'])){
-                    if(defined('ETHPLORER_SHOW_OUTPUT')){
-                        echo $address . " was recently updated (transfers count = " . $aToken['transfersCount'] . ")\n";
-                    }
+                    $this->_cliDebug($address . " was recently updated (transfers count = " . $aToken['transfersCount'] . ")");
                     $aResult[$address]['issuancesCount'] = $this->getContractOperationCount(array('$in' => array('issuance', 'burn', 'mint')), $address, FALSE);
                     $hc = $this->getTokenHoldersCount($address);;
                     if(FALSE !== $hc){
@@ -3325,7 +3323,8 @@ class Ethplorer {
     }
 
     protected function _cliDebug($message){
-        if(isset($this->aSettings['cliDebug']) && $this->aSettings['cliDebug'] && (php_sapi_name() === 'cli')){
+        $showDebug = ((isset($this->aSettings['cliDebug']) && $this->aSettings['cliDebug']) || defined('ETHPLORER_SHOW_OUTPUT')) && (php_sapi_name() === 'cli');
+        if($showDebug){
             echo '[' . date("Y-m-d H:i:s") . '] ' . $message . "\n";
         }
     }

@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-ini_set('memory_limit', '512M');
+ini_set('memory_limit', '1G');
 
 // define('ETHPLORER_SHOW_OUTPUT', 1);
 
