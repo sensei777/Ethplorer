@@ -3020,10 +3020,10 @@ class Ethplorer {
     public function getPoolAddresses($poolId, $updateCache = FALSE){
         evxProfiler::checkpoint('getPoolAddresses', 'START');
         $cache = 'pool_addresses-' . $poolId;
-        $aAddresses = $this->oCache->get($cache, false, true, 600);
+        $aAddresses = $this->oCache->get($cache, false, true, 600) ?: '';
         if($updateCache || (false === $aAddresses)){
-            $cursor = $this->oMongoPools->find('pools', array('uid' => $poolId));
-            $result = array();
+            $cursor = $this->oMongoPools->find('pools', ['uid' => $poolId]);
+            $result = "";
             foreach($cursor as $result) break;
             if(isset($result['addresses'])){
                 $aAddresses = $result['addresses'];
