@@ -3029,8 +3029,8 @@ class Ethplorer {
             $cursor = $this->oMongoPools->find('pools', array('uid' => $poolId));
             $result = array();
             foreach($cursor as $result) break;
-            if($result){
-                $aAddresses = explode(",", $result['addresses']);
+            if(isset($result['addresses'])){
+                $aAddresses = $result['addresses'];
                 $this->oCache->save($cache, $aAddresses);
             }
         }

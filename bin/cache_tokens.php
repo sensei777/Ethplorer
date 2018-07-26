@@ -26,7 +26,7 @@ $startTime = microtime(TRUE);
 echo "\n[".date("Y-m-d H:i")."], Started.";
 
 $es = Ethplorer::db($aConfig);
-$es->createProcessLock('tokens.lock');
+$es->createProcessLock('tokens.lock', 600);
 
 $es->getTokens(true);
 $es->getTopTokens(10, 90);
