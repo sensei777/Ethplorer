@@ -532,7 +532,7 @@ class Ethplorer {
                 }
                 if($balance && isset($balance['balance']) && isset($balance['totalIn'])){
                     $result = $balance['totalIn'];
-                }elseif(!$parityOnly){
+                }elseif($parityOnly){
                     // Get from parity
                     $aResult = $this->oMongo->aggregate('operations2', array(
                         array('$match' => array("to" => $address, "isEth" => true)),
