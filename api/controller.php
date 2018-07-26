@@ -572,7 +572,7 @@ class ethplorerController {
         $addresses = $this->getPostRequest('addresses');
         $response = $this->db->updatePool($method, $poolId, $addresses);
         if (isset($response['error'])) {
-            $this->sendError(109, 'Error update the pool', 400);
+            $this->sendError(109, $response['error']['message'] ?? 'Error update the pool', 400);
         }
         $this->sendResult($response);
     }
