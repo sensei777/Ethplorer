@@ -58,7 +58,8 @@ Ethplorer = {
                 }
             }
         }
-        Ethplorer.showTx = Ethplorer.Storage.get('showTx', null);
+        Ethplorer.maxListSize = 0;
+        Ethplorer.showTx = Ethplorer.Storage.get('showTx', 'all');
         var showTxHash = window.location.hash.substr(1);
         if(showTxHash){
             aShowTxHash = showTxHash.split('=');
@@ -93,6 +94,14 @@ Ethplorer = {
         });
         $(document).on('click', '[data-toggle="tab"]', function(){
             Ethplorer.Nav.set('tab', $(this).parent().attr('id'));
+            var activeTab = Ethplorer.getActiveTab();
+            if(activeTab){
+                if(activeTab != 'transfers'){
+                    $('#showTxChecks').hide();
+                }else{
+                    $('#showTxChecks').show();
+                }
+            }
             if(Ethplorer.data) Ethplorer.showFilter(Ethplorer.data);
         });
         $('.download').click(function(){
@@ -102,7 +111,7 @@ Ethplorer = {
             if(href.indexOf('&hash') == -1){
                 href += '&hash=' + md5($(this).attr("href") + hashDate);
             }
-            var showTx = Ethplorer.Storage.get('showTx', null);
+            var showTx = Ethplorer.Storage.get('showTx', 'all');
             if(showTx){
                 href += '&showTx=' + showTx;
             }
@@ -322,36 +331,43 @@ Ethplorer = {
         }
         var stopCheckingPendingAt = Date.now() + 1800000; // after 30 minutes
         function loadTxDetails(showResult = true) {
-            $.getJSON(Ethplorer.service, requestData, function(_txHash){
-                return function(data){
-                    if(data.debug){
-                        Ethplorer.requestDebug = data.debug;
+            $.getJSON(Ethplorer.service, requestData)
+                .done(function(_txHash){
+                    return function(data){
+                        if(data.debug){
+                            Ethplorer.requestDebug = data.debug;
+                        }
+                        if(data.ethPrice){
+                            Ethplorer.ethPrice = data.ethPrice;
+                        }
+                        if(showResult) {
+                            // if transaction is pending need send ga event
+                            if (data.pending) {
+                                Ethplorer.gaSendEvent('pageView', 'viewTx', 'tx-pending');
+                            }
+                            Ethplorer.showTxDetails(_txHash, data);
+                        } else if (!data.pending) {
+                            // Transaction not pending anymore. Reloading the view.
+                            location.reload();
+                        }
+                        // is transaction is pending
+                        if(data.pending && stopCheckingPendingAt > Date.now()){
+                            setTimeout(function() {
+                                loadTxDetails(false);
+                            }, 30000); // every 30 seconds
+                        }
                     }
                     if(data.ethPrice){
                         Ethplorer.ethPrice = data.ethPrice;
                     }
-                    if(showResult) {
-                        // if transaction is pending need send ga event
-                        if (data.pending) {
-                            Ethplorer.gaSendEvent('pageView', 'viewTx', 'tx-pending');
-                        }
-                        Ethplorer.showTxDetails(_txHash, data);
-                    } else if (!data.pending) {
-                        // Transaction not pending anymore. Reloading the view.
-                        location.reload();
-                    }
-                    // is transaction is pending
-                    if(data.pending && stopCheckingPendingAt > Date.now()){
-                        setTimeout(function() {
-                            loadTxDetails(false);
-                        }, 30000); // every 30 seconds
-                    }
-                }
-                if(data.ethPrice){
-                    Ethplorer.ethPrice = data.ethPrice;
-                }
-                Ethplorer.showTxDetails(_txHash, data);
-            }(txHash));
+                    Ethplorer.showTxDetails(_txHash, data);
+                }(txHash))
+                .fail(function() {
+                    // Try send request again after 30 seconds
+                    setTimeout(function() {
+                        loadTxDetails(false);
+                    }, 30000);
+                });
         }
         loadTxDetails();
     },
@@ -373,7 +389,12 @@ Ethplorer = {
             var pf = parseFloat(totalSupply.replace(/\,/g,'').split(' ')[0]);
             if(pf){
                 pf = Ethplorer.Utils.round(pf * oToken.price.rate, 2);
-                totalSupply = totalSupply + '<br><span class="total-supply-usd">$&nbsp;' + Ethplorer.Utils.formatNum(pf, true, 2, true) + '</span>';
+                if(pf < 1e+12){
+                    pf = Ethplorer.Utils.formatNum(pf, true, 2, true);
+                }else{
+                    pf = "--";
+                }
+                totalSupply = totalSupply + '<br><span class="total-supply-usd">$&nbsp;' + pf + '</span>';
                 $('#transaction-token-totalSupply').html(totalSupply);
             }
         }
@@ -469,7 +490,7 @@ Ethplorer = {
         var titleAdd = '';
 
         $('#tx-parsed').hide();
-        if(oTx.input.length){
+        if(oTx.input && oTx.input.length){
             oTx.input = oTx.input.toUpperCase().replace(/^0x/i, '');
             Ethplorer.dataFields['transaction-tx-input'] = {
                 hex: oTx.input,
@@ -568,7 +589,12 @@ Ethplorer = {
                 var pf = parseFloat(totalSupply.replace(/\,/g,'').split(' ')[0]);
                 if(pf){
                     pf = Ethplorer.Utils.round(pf * oToken.price.rate, 2);
-                    totalSupply = totalSupply + '<br><span class="total-supply-usd">$&nbsp;' + Ethplorer.Utils.formatNum(pf, true, 2, true) + '</span>';
+                    if(pf < 1e+12){
+                        pf = Ethplorer.Utils.formatNum(pf, true, 2, true);
+                    }else{
+                        pf = "--";
+                    }
+                    totalSupply = totalSupply + '<br><span class="total-supply-usd">$&nbsp;' + pf + '</span>';
                     $('#transaction-token-totalSupply').html(totalSupply);
                 }
             }
@@ -592,9 +618,9 @@ Ethplorer = {
                     op.index = idx;
                     var opToken = Ethplorer.prepareToken(op.token);
                     var valFloat = 0;
-                    if('undefined' !== typeof(op.value)){
-                        valFloat = parseFloat(Ethplorer.Utils.toBig(op.value).toString());
-                        valFloat =  valFloat / Math.pow(10, opToken.decimals)
+                    if('undefined' !== typeof(op.value)){                       
+                        valFloat = parseFloat(Ethplorer.Utils.toBig(op.value).toString());                        
+                        valFloat = valFloat / Math.pow(10, opToken.decimals);
                         if(Ethplorer.Utils.isSafari()){
                             op.value = valFloat;
                         }else{
@@ -720,7 +746,8 @@ Ethplorer = {
             if (
                 (Ethplorer.Storage.get('showTx') === 'all' || Ethplorer.Storage.get('showTx') === 'eth') &&
                 (!txData.tx.operations || !txData.tx.operations.length) &&
-                txData.tx.value > 0
+                txData.tx.value > 0 &&
+                txData.tx.success !== false
             ) {
                 $('#token-operation-block').show();
                 $('#token-operation-block .token-name:eq(0)').html('ETH');
@@ -855,7 +882,9 @@ Ethplorer = {
         var aValues = ['address', 'balance'];
         if(data.balanceIn){
             aValues.push('balanceIn');
-            aValues.push('balanceOut');
+            if('undefined' === typeof(data.hideBalanceOut)){
+                aValues.push('balanceOut');
+            }
         }
         Ethplorer.fillValues('address', data, aValues);
         $('#address-token-balances, #address-token-details').hide();
@@ -948,6 +977,7 @@ Ethplorer = {
 
             if(data.pager && data.pager.transfers){
                 data.token.transfersCount = data.pager.transfers.total;
+                if(data.token.transfersCount > Ethplorer.maxListSize) Ethplorer.maxListSize = data.token.transfersCount;
             }
             if(data.pager && data.pager.issuances){
                 data.token.issuancesCount = '';
@@ -961,6 +991,9 @@ Ethplorer = {
 
             if(data.contract && data.contract.txsCount && (data.contract.txsCount > data.token.txsCount)){
                 data.token.txsCount = data.contract.txsCount;
+            }
+            if(data.token && data.token.txsCount){
+                if(data.token.txsCount > Ethplorer.maxListSize) Ethplorer.maxListSize = data.token.txsCount;
             }
 
             var fields = [
@@ -1139,7 +1172,12 @@ Ethplorer = {
     showFilter: function(data){
         var activeTab = Ethplorer.getActiveTab();
         if(activeTab && data.pager && data.pager[activeTab]){
-            if(data.pager[activeTab].records > 100000 || ((activeTab == 'transfers') && (data.token && data.token.txsCount && data.token.txsCount > 100000))){
+            if(activeTab != 'transfers'){
+                $('#showTxChecks').hide();
+            }else{
+                $('#showTxChecks').show();
+            }
+            if(data.pager[activeTab].records > 100000 || Ethplorer.maxListSize > 100000){
                 $('#filter_list').hide();
             }else{
                 if(Ethplorer.showTx && data.token){
@@ -1229,7 +1267,7 @@ Ethplorer = {
         var tableId = data.token ? 'address-token-transfers' : 'address-transfers';
         $('#' + tableId).find('.table').empty();
         if(Ethplorer.showTx && !$('#showTxEth').length){
-            var showTxChecks = '<span style="color: white;vertical-align:middle;"><label for="showTxEth">ETH <sup class="diff-down">new</sup></label></span> <input onClick="Ethplorer.showTransfers(this, \'eth\');" id="showTxEth" type="checkbox" ' + ((Ethplorer.showTx == 'all' || Ethplorer.showTx == 'eth') ? 'checked="checked"' : '') + ' name="showTxEth" value="1" style="vertical-align: text-bottom;margin-right:5px;">' + ' <span style="color: white;vertical-align:middle;"><label for="showTxTokens">Tokens <sup class="diff-down">new</sup></label></span> <input onClick="Ethplorer.showTransfers(this, \'tokens\');" id="showTxTokens" type="checkbox" ' + ((Ethplorer.showTx == 'all' || Ethplorer.showTx == 'tokens') ? 'checked="checked"' : '') + ' name="showTxTokens" value="1" style="vertical-align: text-bottom;margin-right:5px;">';
+            var showTxChecks = '<span id="showTxChecks"><span style="color: white;vertical-align:middle;"><label for="showTxEth">ETH <sup class="diff-down">new</sup></label></span> <input onClick="Ethplorer.showTransfers(this, \'eth\');" id="showTxEth" type="checkbox" ' + ((Ethplorer.showTx == 'all' || Ethplorer.showTx == 'eth') ? 'checked="checked"' : '') + ' name="showTxEth" value="1" style="vertical-align: text-bottom;margin-right:5px;">' + ' <span style="color: white;vertical-align:middle;"><label for="showTxTokens">Tokens <sup class="diff-down">new</sup></label></span> <input onClick="Ethplorer.showTransfers(this, \'tokens\');" id="showTxTokens" type="checkbox" ' + ((Ethplorer.showTx == 'all' || Ethplorer.showTx == 'tokens') ? 'checked="checked"' : '') + ' name="showTxTokens" value="1" style="vertical-align: text-bottom;margin-right:5px;"></span>';
 
             if(!data.token){
                 $('.filter-form').prepend('<style>@media screen and (max-width: 501px) {.filter-box.out-of-tabs{height: 35px !important;}}</style>' + showTxChecks);
@@ -1250,7 +1288,14 @@ Ethplorer = {
                     }else{
                         var txToken = Ethplorer.prepareToken(data.token ? data.token : data.tokens[tx.contract]);
                     }
-                    if(!tx.isEth) qty = qty / Math.pow(10, txToken.decimals);
+                    if(!tx.isEth){ 
+                        var k = Math.pow(10, txToken.decimals);
+                        if(Ethplorer.Utils.isSafari()){
+                            qty = qty / k;
+                        }else{
+                            qty = parseFloat(Ethplorer.Utils.toBig(tx.value).div(k).toString());
+                        }
+                    }
                     var row = $('<tr>');
                     var tdDate = $('<td>').addClass('hide-small');
                     var tdData = $('<td>');
@@ -1264,7 +1309,9 @@ Ethplorer = {
                     var to = tx.to ? ((tx.to !== address) ? Ethplorer.Utils.getEthplorerLink(tx.to) : ('<span class="same-address">' + address + '</span>')) : false;
                     var _address = (tx.address && (tx.address === address )) ? ('<span class="same-address">' + address + '</span>') : tx.address;
                     var rowClass = '';
-                    if(from && (tx.from === address)){
+                    if(from && to && (tx.from === address) && (tx.to === address)){
+                        rowClass = 'self';
+                    }else if(from && (tx.from === address)){
                         value = '-' + value;
                         rowClass = 'outgoing';
                     }else if(to && (tx.to === address)){
@@ -1332,6 +1379,7 @@ Ethplorer = {
             if(data.pager && data.pager.transfers){
                 var pagination = $('<tr class="paginationFooter"><td colspan="10"></td></tr>');
                 Ethplorer.drawPager(pagination.find('td'), data.pager.transfers);
+                if(data.pager.transfers.total && (data.pager.transfers.total > Ethplorer.maxListSize)) Ethplorer.maxListSize = data.pager.transfers.total;
                 $('#' + tableId + ' .table').append(pagination);
             }
         }
@@ -1708,9 +1756,9 @@ Ethplorer = {
                 oToken[property] = Ethplorer.Config.tokens[oToken.address][property];
             }
         }
+        oToken.decimals = parseFloat(Ethplorer.Utils.toBig(oToken.decimals).toString());
         oToken.totalSupply = Ethplorer.Utils.toBig(oToken.totalSupply);
         if(oToken.decimals){
-            oToken.decimals = parseInt(Ethplorer.Utils.toBig(oToken.decimals).toString());
             // To handle ether-like tokens with 18 decimals
             if(oToken.decimals > 20){ // Too many decimals, must be invalid value, use 0 instead
                 oToken.decimals = 0;
@@ -1724,7 +1772,7 @@ Ethplorer = {
             oToken.totalIn = oToken.totalIn / k;
             oToken.totalOut = oToken.totalOut / k;
         }
-        if(parseInt(oToken.totalSupply.toString()) >= 1e+18){
+        if(parseFloat(oToken.totalSupply.toString()) >= 1e+18){
             if(!oToken.decimals){
                 oToken.estimatedDecimals = true;
                 oToken.decimals = 18;
@@ -1843,7 +1891,11 @@ Ethplorer = {
                     value = "N/A";
                 }else{
                     var gwei = Ethplorer.Utils.toBig(value).mul(Math.pow(10, 9)).toString();
-                    value = Ethplorer.Utils.formatNum(value, true, 18, true) + '&nbsp;<i class="fab fa-ethereum"></i>&nbsp;ETH&nbsp;(' + Ethplorer.Utils.formatNum(gwei, true, 3, true).toString().replace(/[0.]*$/, '', 'g') + '&nbsp;Gwei)';
+                    gwei = Ethplorer.Utils.formatNum(gwei, true, 3, true).toString();
+                    if(gwei.toString().indexOf(".") > 0){
+                        gwei = gwei.replace(/0*$/, '', 'g').replace(/\.$/, '', 'g');
+                    }
+                    value = Ethplorer.Utils.formatNum(value, true, 18, true) + '&nbsp;<i class="fab fa-ethereum"></i>&nbsp;ETH&nbsp;(' + gwei + '&nbsp;Gwei)';
                 }
                 break;
             case 'ether-full':
@@ -2052,10 +2104,6 @@ Ethplorer = {
             if(!num){
                 num = 0;
             }
-            function math(command, val, decimals){
-                var k = Math.pow(10, decimals ? parseInt(decimals) : 0);
-                return Math[command](val * k) / k;
-            }
             function padZero(s, len){
                 while(s.length < len) s += '0';
                 return s;
@@ -2084,14 +2132,13 @@ Ethplorer = {
             }
             if((num.toString().indexOf("e-") > 0) && withDecimals){
                 var res = Ethplorer.Utils.toBig(num).toFixed(decimals);
-                if(cutZeroes){
+                if(cutZeroes && (res.indexOf(".") > 0)){
                     res = res.replace(/0*$/, '').replace(/\.$/, '.00');
                 }
                 return res;
             }
-
             if(withDecimals){
-                num = math('round', num, decimals);
+                num = Ethplorer.Utils.round(num, decimals);
             }
             var parts = num.toString().split('.');
             var res = parts[0].toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
@@ -2135,10 +2182,6 @@ Ethplorer = {
                     postfix = ' M';
                 }
             }
-            function math(command, val, decimals){
-                var k = Math.pow(10, decimals ? parseInt(decimals) : 0);
-                return Math[command](val * k) / k;
-            }
             function padZero(s, len){
                 while(s.length < len) s += '0';
                 return s;
@@ -2164,7 +2207,7 @@ Ethplorer = {
             }
 
             if(withDecimals){
-                num = math('round', num, decimals);
+                num = Ethplorer.Utils.round(num, decimals);
             }
             var parts = num.toString().split('.');
             var res = parts[0].toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
@@ -2345,9 +2388,14 @@ Ethplorer = {
         },
         round: function(val, decimals){
             decimals = decimals ? parseInt(decimals) : 0;
-            var k = decimals ? Math.pow(10, decimals) : 1;
-
-            return Math.round(val * k) / k;
+            var parts = val.toString().split('.');
+            if(parts.length > 1){
+                if(parts[1].length > decimals){
+                    var k = decimals ? Math.pow(10, decimals) : 1;
+                    return Math.round(val * k) / k;
+                }
+            }
+            return val;
         },
         floor: function(val, decimals){
             decimals = decimals ? parseInt(decimals) : 0;

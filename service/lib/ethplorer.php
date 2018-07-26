@@ -112,7 +112,7 @@ class Ethplorer {
      *
      * @var string
      */
-    protected $showTx = self::SHOW_TX_TOKENS;
+    protected $showTx = self::SHOW_TX_ALL;
 
     /**
      * Cache for getTokens
@@ -137,6 +137,8 @@ class Ethplorer {
     protected $sentryClient;
 
     protected $useOperations2 = FALSE;
+
+    protected $getTokensCacheCreation = FALSE;
 
     /**
      * Constructor.
@@ -477,6 +479,7 @@ class Ethplorer {
             if($out < 0){
                 $in = $result['balance'];
                 $out = 0;
+                $result['hideBalanceOut'] = true;
             }
             $result['balanceOut'] = $out;
             $result['balanceIn'] = $in;
@@ -529,7 +532,7 @@ class Ethplorer {
                     $cursor = $this->oMongo->find('ethBalances', array('address' => $address));
                     foreach($cursor as $balance) break;
                 }
-                if($balance && isset($balance['balance'])){
+                if($balance && isset($balance['balance']) && isset($balance['totalIn'])){
                     $result = $balance['totalIn'];
                 }else{
                     // Get from parity
@@ -797,7 +800,7 @@ class Ethplorer {
             $ten = Decimal::create(10);
             $dec = Decimal::create($decimals);
             $value = Decimal::create(hexdec($operation['value']));
-            $operation['value'] = '' . $value->div($ten->pow($dec), 4);
+            $operation['value'] = (string)$value;
 
             return $operation;
         }
@@ -978,7 +981,10 @@ class Ethplorer {
             return $this->aTokens;
         }
         $aResult = $this->oCache->get('tokens', false, true);
-        if($updateCache || (false === $aResult)){
+        if(!$this->getTokensCacheCreation && ($updateCache/* || (false === $aResult)*/)){
+            // Recursion protection
+            $this->getTokensCacheCreation = true;
+
             evxProfiler::checkpoint('getTokens', 'START');
             $aPrevTokens = array();
             if($updateCache){
@@ -996,9 +1002,7 @@ class Ethplorer {
                 unset($aToken["_id"]);
                 $aResult[$address] = $aToken;
                 if(!isset($aPrevTokens[$address]) || ($aPrevTokens[$address]['transfersCount'] < $aToken['transfersCount'])){
-                    if(defined('ETHPLORER_SHOW_OUTPUT')){
-                        echo $address . " was recently updated (transfers count = " . $aToken['transfersCount'] . ")\n";
-                    }
+                    $this->_cliDebug($address . " was recently updated (transfers count = " . $aToken['transfersCount'] . ")");
                     $aResult[$address]['issuancesCount'] = $this->getContractOperationCount(array('$in' => array('issuance', 'burn', 'mint')), $address, FALSE);
                     $hc = $this->getTokenHoldersCount($address);;
                     if(FALSE !== $hc){
@@ -1251,7 +1255,7 @@ class Ethplorer {
      * @param string $address  Contract address
      * @return int
      */
-    public function countOperations($address, $useFilter = TRUE, $showTx = self::SHOW_TX_TOKENS){        
+    public function countOperations($address, $useFilter = TRUE, $showTx = self::SHOW_TX_ALL){        
         evxProfiler::checkpoint('countOperations', 'START', 'address=' . $address . ', useFilter = ' . ($useFilter ? 'ON' : 'OFF'));
         $cache = 'countOperations-' . $address . '-' . $showTx;
         $result = $this->oCache->get($cache, false, true, 30);
@@ -1494,7 +1498,7 @@ class Ethplorer {
      * @param int $limit       Maximum number of records
      * @return array
      */
-    public function getAddressOperations($address, $limit = 10, $offset = FALSE, array $aTypes = NULL, $showTx = self::SHOW_TX_TOKENS){
+    public function getAddressOperations($address, $limit = 10, $offset = FALSE, array $aTypes = NULL, $showTx = self::SHOW_TX_ALL){
         evxProfiler::checkpoint('getAddressOperations', 'START', 'address=' . $address . ', limit=' . $limit . ', offset=' . (is_array($offset) ? print_r($offset, TRUE) : (int)$offset));
 
         $result = array();
@@ -2082,7 +2086,7 @@ class Ethplorer {
     public function getTokenHistoryGrouped($period = 30, $address = FALSE, $type = 'daily', $cacheLifetime = 1800, $showEth = FALSE, $updateCache = FALSE){
         $cache = 'token_history_grouped-' . ($address ? ($address . '-') : '') . $period . (($type == 'hourly') ? '-hourly' : '') . ($showEth ? '-eth' : '');
         $result = $address ? $this->oCache->get($cache, false, true, $cacheLifetime) : $this->oCache->get($cache, false, true);
-        if(FALSE === $result || $updateCache){
+         if(($address && FALSE === $result) || $updateCache){
             // Chainy
             if($address && ($address == self::ADDRESS_CHAINY)){
                 return $this->getChainyTokenHistoryGrouped($period);
@@ -2135,7 +2139,7 @@ class Ethplorer {
      *
      * @return array
      */
-    public function getTokenFullHistoryGrouped($showEth = FALSE){
+    public function getTokenFullHistoryGrouped($updateCache = FALSE){
         $tsNow = time();
         $tsStart = 1451606400; // 01.01.2016
         $tsEnd = 1459468800;
@@ -2150,17 +2154,11 @@ class Ethplorer {
                 $cacheLifetime = 24 * 60 * 60;
             }
             $result = $this->oCache->get($cache, FALSE, TRUE, $cacheLifetime);
-            if(FALSE === $result){
+            if(FALSE === $result && $updateCache){
                 $result = array();
 
                 $aMatch = array("timestamp" => array('$gte' => $tsStart + 1, '$lte' => $tsEnd));
-                if(!$showEth){
-                    if($this->useOperations2){
-                        $aMatch['isEth'] = false;
-                    }else{
-                        $aMatch["contract"] = array('$ne' => 'ETH');
-                    }
-                }
+                $aMatch['isEth'] = false;
                 $_id = array(
                     "year"  => array('$year' => array('$add' => array($this->oMongo->toDate(0), array('$multiply' => array('$timestamp', 1000))))),
                     "month"  => array('$month' => array('$add' => array($this->oMongo->toDate(0), array('$multiply' => array('$timestamp', 1000))))),
@@ -2794,13 +2792,19 @@ class Ethplorer {
             $result = false;
             $updateCache = false;
         }
+        
+        if(FALSE === $result || $updateCache){
+            
+            $opCount = $this->countOperations($address, FALSE);
+            if($opCount >= 10000){
+                evxProfiler::checkpoint('getAddressPriceHistoryGrouped', 'FINISH', 'Address has >10000 operations, skip');
+                return FALSE;                
+            }
 
-        // if $result is false or need to update cache
-        if (FALSE === $result || $updateCache) {
-            $aSearch = ['from', 'to', 'address'];
-            $aTypes = ['transfer', 'issuance', 'burn', 'mint'];
-            $aResult = [];
-            $aContracts = [];
+            $aSearch = array('from', 'to', 'address'); // @todo: research "addresses"
+            $aTypes = array('transfer', 'issuance', 'burn', 'mint');
+            $aResult = array();
+            $aContracts = array();
             $minTs = false;
             $maxTs = 0;
             
@@ -3016,8 +3020,14 @@ class Ethplorer {
         return $result;
     }
 
-    public function createPool($addresses = NULL){
-        return $this->_jsonrpcall($this->aSettings['pools'], 'createPool', array($addresses));
+    /**
+     * Create pool
+     * @param String $apiKey
+     * @param String $addresses
+     * @return Array
+     */
+    public function createPool($apiKey, $addresses = NULL){
+        return $this->_jsonrpcall($this->aSettings['pools'], 'createPool', array($apiKey, $addresses));
     }
 
     public function deletePool($poolId = NULL){
@@ -3025,7 +3035,10 @@ class Ethplorer {
     }
 
     public function updatePool($method = NULL, $poolId = NULL, $addresses = NULL){
-        return $this->_jsonrpcall($this->aSettings['pools'], 'updatePool', array($method, $poolId, $addresses));
+        $response = $this->_jsonrpcall($this->aSettings['pools'], 'updatePool', array($method, $poolId, $addresses));
+        // clean cache
+        $this->oCache->delete('pool_addresses-' . $poolId);
+        return $response;
     }
 
     /**
@@ -3039,11 +3052,11 @@ class Ethplorer {
         $cache = 'pool_addresses-' . $poolId;
         $aAddresses = $this->oCache->get($cache, false, true, 600);
         if($updateCache || (false === $aAddresses)){
-            $cursor = $this->oMongoPools->find('pools', array('id' => $poolId));
+            $cursor = $this->oMongoPools->find('pools', array('uid' => $poolId));
             $result = array();
             foreach($cursor as $result) break;
-            if($result){
-                $aAddresses = explode(",", $result['addresses']);
+            if(isset($result['addresses'])){
+                $aAddresses = $result['addresses'];
                 $this->oCache->save($cache, $aAddresses);
             }
         }
@@ -3232,7 +3245,11 @@ class Ethplorer {
             if(isset($json["result"])){
                 $result = $json["result"];
             }
+            if(isset($json["error"])){
+                $result = ["error" => $json["error"]];
+            }
         }
+
         return $result;
     }
 
@@ -3333,7 +3350,8 @@ class Ethplorer {
     }
 
     protected function _cliDebug($message){
-        if(isset($this->aSettings['cliDebug']) && $this->aSettings['cliDebug'] && (php_sapi_name() === 'cli')){
+        $showDebug = ((isset($this->aSettings['cliDebug']) && $this->aSettings['cliDebug']) || defined('ETHPLORER_SHOW_OUTPUT')) && (php_sapi_name() === 'cli');
+        if($showDebug){
             echo '[' . date("Y-m-d H:i:s") . '] ' . $message . "\n";
         }
     }

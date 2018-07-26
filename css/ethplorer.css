@@ -613,6 +613,11 @@ a.dashed {
     color: #ae2525 !important;
 }
 
+.self {
+    font-size: 16px;
+    color: #fff !important;
+}
+
 .diff-up {
     color: #1e8c1e !important;
 }

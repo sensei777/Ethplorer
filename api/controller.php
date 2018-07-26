@@ -84,22 +84,23 @@ class ethplorerController {
         return (FALSE !== $result) && (!is_null($result)) ? $result : $default;
     }
 
-    public function sendResult(array $result){
+    public function sendResult(array $result, $statusCode = 200){
         if($this->getRequest('debugId')){
             $result['debug'] = $this->db->getDebugData();
         }
+        http_response_code($statusCode);
         echo json_encode($result, JSON_UNESCAPED_SLASHES);
         die();
     }
 
-    public function sendError($code, $message){
+    public function sendError($code, $message, $statusCode = 200){
         $result = array(
             'error' => array(
                 'code' => $code,
                 'message' => $message
             )
         );
-        $this->sendResult($result);
+        $this->sendResult($result, $statusCode);
     }
 
     /**
@@ -112,26 +113,23 @@ class ethplorerController {
         $command = $this->getCommand();
         if($command && (in_array($command, $this->apiCommands) || in_array($command, $this->apiPostCommands)) && method_exists($this, $command)){
             $key = in_array($command, $this->apiCommands) ? $this->getRequest('apiKey', FALSE) : $this->getPostRequest('apiKey', FALSE);
-            // if(!$key || !$this->db->checkAPIkey($key)){
-            //     header('HTTP/1.1 403 Forbidden');
-            //     $this->sendError(1, 'Invalid API key');
-            // }
-            // $this->defaults = $this->db->getAPIKeyDefaults($key, $command);
+            if(!$key || !$this->db->checkAPIkey($key)){
+                $this->sendError(1, 'Invalid API key', 403);
+            }
+            $this->defaults = $this->db->getAPIKeyDefaults($key, $command);
 
-            // if($this->db->isSuspendedAPIKey($key)){
-            //     header('HTTP/1.1 403 Forbidden');
-            //     $this->sendError(133, 'API key temporary suspended. Contact support.');
-            // }
+            if($this->db->isSuspendedAPIKey($key)){
+                $this->sendError(133, 'API key temporary suspended. Contact support.', 403);
+            }
             
-            // if(in_array($command, $this->apiPostCommands)){
-            //     // @todo: Temporary solution, special key property will be used later
-            //     if($key == "freekey"){
-            //         header('HTTP/1.1 403 Forbidden');
-            //         $this->sendError(1, 'Invalid API key');
-            //     }
-            //     $result = call_user_func(array($this, $command));
-            //     return $result;
-            // }
+            if(in_array($command, $this->apiPostCommands)){
+                // @todo: Temporary solution, special key property will be used later
+                if($key == "freekey"){
+                    $this->sendError(1, 'Invalid API key', 403);
+                }
+                $result = call_user_func(array($this, $command));
+                return $result;
+            }
 
             $timestamp = $this->getRequest('ts', FALSE);
             $needCache = (FALSE !== $timestamp) || ($command === 'getAddressHistory');
@@ -532,22 +530,25 @@ class ethplorerController {
     }
 
     public function createPool(){
+        $apiKey = $this->getPostRequest('apiKey');
         $addresses = $this->getPostRequest('addresses');
-        $poolId = $this->db->createPool($addresses);
-        if(!$poolId){
-            $this->sendError(105, 'Error creating pool');
+        $response = $this->db->createPool($apiKey, $addresses);
+        if (isset($response['error'])) {
+            $this->sendError(105, 'Error creating pool', 400);
         }
-        $result = array('poolId' => $poolId);
-        $this->sendResult($result);
+        $this->sendResult($response);
     }
 
     public function deletePool(){
         $poolId = $this->getPostRequest('poolId');
-        if(!$poolId){
-            $this->sendError(106, 'Missing pool ID');
+        if (!$poolId) {
+            $this->sendError(106, 'Invalid pool id', 400);
         }
-        $result = $this->db->deletePool($poolId);
-        $this->sendResult($result);
+        $response = $this->db->deletePool($poolId);
+        if (isset($response['error'])) {
+            $this->sendError(110, 'Error deleting pool', 400);
+        }
+        $this->sendResult($response);
     }
 
     public function addPoolAddresses(){
@@ -564,15 +565,18 @@ class ethplorerController {
 
     public function updatePool($method = FALSE){
         if(!$method){
-            $this->sendError(107, 'Missing method name');
+            $this->sendError(107, 'Invalid method name', 400);
         }
         $poolId = $this->getPostRequest('poolId');
         if(!$poolId){
-            $this->sendError(106, 'Missing pool ID');
+            $this->sendError(106, 'Invalid pool id', 400);
         }
         $addresses = $this->getPostRequest('addresses');
-        $result = $this->db->updatePool($method, $poolId, $addresses);
-        $this->sendResult($result);
+        $response = $this->db->updatePool($method, $poolId, $addresses);
+        if (isset($response['error'])) {
+            $this->sendError(109, 'Error update the pool', 400);
+        }
+        $this->sendResult($response);
     }
 
     /**
@@ -582,11 +586,11 @@ class ethplorerController {
      * @return array
      */
     public function getPoolAddresses(){
-        $result = array('addresses' => array());
-        $poolId = $this->getRequest('poolId', FALSE);
-        if($poolId){
-            $result = array('addresses' => $this->db->getPoolAddresses($poolId));
+        $poolId = $this->getParam(0, FALSE);
+        if (!$poolId) {
+            $this->sendError(106, 'Invalid pool id', 400);
         }
+        $result = array('addresses' => $this->db->getPoolAddresses($poolId));
         $this->sendResult($result);
     }
 
@@ -596,13 +600,13 @@ class ethplorerController {
      * @undocumented
      * @return array
      */
-    public function getPoolLastTransactions(){
-        $result = array();
-        $poolId = $this->getRequest('poolId', FALSE);
-        $period = max(min(abs((int)$this->getRequest('period', 86400)), 864000), 1);
-        if($poolId){
-            $result = $this->db->getPoolLastTransactions($poolId, $period);
+    public function getPoolLastTransactions() {
+        $poolId = $this->getParam(1, FALSE);
+        if (!$poolId) {
+            $this->sendError(106, 'Invalid pool id', 400);
         }
+        $period = max(min(abs((int)$this->getRequest('period', 600)), 864000), 1);
+        $result = $this->db->getPoolLastTransactions($poolId, $period);
         $this->sendResult($result);
     }
 
@@ -612,13 +616,13 @@ class ethplorerController {
      * @undocumented
      * @return array
      */
-    public function getPoolLastOperations(){
-        $result = array();
-        $poolId = $this->getRequest('poolId', FALSE);
-        $period = max(min(abs((int)$this->getRequest('period', 86400)), 864000), 1);
-        if($poolId){
-            $result = $this->db->getPoolLastOperations($poolId, $period);
+    public function getPoolLastOperations() {
+        $poolId = $this->getParam(0, FALSE);
+        if (!$poolId) {
+            $this->sendError(106, 'Invalid pool id', 400);
         }
+        $period = max(min(abs((int)$this->getRequest('period', 600)), 864000), 1);
+        $result = $this->db->getPoolLastOperations($poolId, $period);
         $this->sendResult($result);
     }
 
