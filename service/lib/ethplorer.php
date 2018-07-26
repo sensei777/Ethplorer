@@ -3007,7 +3007,7 @@ class Ethplorer {
     public function updatePool($method = NULL, $poolId = NULL, $addresses = NULL){
         $response = $this->_jsonrpcall($this->aSettings['pools'], 'updatePool', array($method, $poolId, $addresses));
         // clean cache
-        $this->oCache->delete('pool_addresses-' . $poolId, false);
+        $this->oCache->delete('pool_addresses-' . $poolId);
         return $response;
     }
 
@@ -3219,6 +3219,7 @@ class Ethplorer {
                 $result = ["error" => $json["error"]];
             }
         }
+
         return $result;
     }
 
