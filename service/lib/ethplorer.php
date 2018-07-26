@@ -979,6 +979,7 @@ class Ethplorer {
             return $this->aTokens;
         }
         $aResult = $this->oCache->get('tokens', false, true);
+        // Allow generating cache only from cron jobs
         if(!$this->getTokensCacheCreation && ($updateCache/* || (false === $aResult)*/)){
             // Recursion protection
             $this->getTokensCacheCreation = true;
@@ -2152,6 +2153,7 @@ class Ethplorer {
                 $cacheLifetime = 24 * 60 * 60;
             }
             $result = $this->oCache->get($cache, FALSE, TRUE, $cacheLifetime);
+            // Allow generating cache only from cron jobs
             if(FALSE === $result && $updateCache){
                 $result = array();
 
