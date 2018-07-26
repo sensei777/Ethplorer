@@ -532,7 +532,7 @@ class Ethplorer {
                 }
                 if($balance && isset($balance['balance']) && isset($balance['totalIn'])){
                     $result = $balance['totalIn'];
-                }else{
+                }elseif($parityOnly){
                     // Get from parity
                     $aResult = $this->oMongo->aggregate('operations2', array(
                         array('$match' => array("to" => $address, "isEth" => true)),
@@ -979,6 +979,7 @@ class Ethplorer {
             return $this->aTokens;
         }
         $aResult = $this->oCache->get('tokens', false, true);
+        // Allow generating cache only from cron jobs
         if(!$this->getTokensCacheCreation && ($updateCache/* || (false === $aResult)*/)){
             // Recursion protection
             $this->getTokensCacheCreation = true;
@@ -2149,9 +2150,10 @@ class Ethplorer {
             $cache = 'token_full_history_grouped-' . $tsEnd;
             $cacheLifetime = FALSE;
             if($tsEnd > $tsNow){
-                $cacheLifetime = 24 * 60 * 60;
+                $cacheLifetime = 1 * 60 * 60;
             }
             $result = $this->oCache->get($cache, FALSE, TRUE, $cacheLifetime);
+            // Allow generating cache only from cron jobs
             if(FALSE === $result && $updateCache){
                 $result = array();
 
@@ -2178,7 +2180,7 @@ class Ethplorer {
                 );
                 if(is_array($dbData) && !empty($dbData['result'])){
                     $result = $dbData['result'];
-                    $this->oCache->save($cache, $result);
+                    $this->oCache->save($cache, $result, $cacheLifetime ? FALSE : TRUE);
                 }
             }
             if(is_array($result) && sizeof($result)){
