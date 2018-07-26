@@ -2137,7 +2137,7 @@ class Ethplorer {
      *
      * @return array
      */
-    public function getTokenFullHistoryGrouped($showEth = FALSE){
+    public function getTokenFullHistoryGrouped($updateCache = FALSE){
         $tsNow = time();
         $tsStart = 1451606400; // 01.01.2016
         $tsEnd = 1459468800;
@@ -2152,17 +2152,11 @@ class Ethplorer {
                 $cacheLifetime = 24 * 60 * 60;
             }
             $result = $this->oCache->get($cache, FALSE, TRUE, $cacheLifetime);
-            if(FALSE === $result){
+            if(FALSE === $result && $updateCache){
                 $result = array();
 
                 $aMatch = array("timestamp" => array('$gte' => $tsStart + 1, '$lte' => $tsEnd));
-                if(!$showEth){
-                    if($this->useOperations2){
-                        $aMatch['isEth'] = false;
-                    }else{
-                        $aMatch["contract"] = array('$ne' => 'ETH');
-                    }
-                }
+                $aMatch['isEth'] = false;
                 $_id = array(
                     "year"  => array('$year' => array('$add' => array($this->oMongo->toDate(0), array('$multiply' => array('$timestamp', 1000))))),
                     "month"  => array('$month' => array('$add' => array($this->oMongo->toDate(0), array('$multiply' => array('$timestamp', 1000))))),
