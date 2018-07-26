@@ -2180,7 +2180,7 @@ class Ethplorer {
                 );
                 if(is_array($dbData) && !empty($dbData['result'])){
                     $result = $dbData['result'];
-                    $this->oCache->save($cache, $result);
+                    $this->oCache->save($cache, $result, $cacheLifetime ? FALSE : TRUE);
                 }
             }
             if(is_array($result) && sizeof($result)){
