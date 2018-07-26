@@ -15,7 +15,9 @@
  * limitations under the License.
  */
 
-ini_set('memory_limit', '512M');
+ini_set('memory_limit', '1G');
+
+// define('ETHPLORER_SHOW_OUTPUT', 1);
 
 require dirname(__FILE__) . '/../service/lib/ethplorer.php';
 $aConfig = require_once dirname(__FILE__) . '/../service/config.php';
@@ -24,7 +26,7 @@ $startTime = microtime(TRUE);
 echo "\n[".date("Y-m-d H:i")."], Started.";
 
 $es = Ethplorer::db($aConfig);
-$es->createProcessLock('tokens.lock');
+$es->createProcessLock('tokens.lock', 600);
 
 $es->getTokens(true);
 $es->getTopTokens(10, 90);

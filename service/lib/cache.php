@@ -145,6 +145,29 @@ class evxCache {
     }
 
     /**
+     * Clean cache by key
+     * @param String $entryName
+     */
+    public function delete($entryName) {
+        switch ($this->driver) {
+            case 'redis':
+                $this->oDriver->del($entryName);
+                break;
+
+            case 'memcached':
+                $this->oDriver->delete($entryName);
+                break;
+
+            case 'file':
+                @unlink($this->path . '/' . $entryName . '.tmp');
+                break;
+
+            default:
+                throw \Exception('The method for delete of cache driver not implemented');
+        }
+    }
+
+    /**
      * Saves data to file.
      *
      * @param string  $entryName  Cache entry name
