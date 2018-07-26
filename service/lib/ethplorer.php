@@ -530,7 +530,7 @@ class Ethplorer {
                     $cursor = $this->oMongo->find('ethBalances', array('address' => $address));
                     foreach($cursor as $balance) break;
                 }
-                if($balance && isset($balance['balance'])){
+                if($balance && isset($balance['balance']) && isset($balance['totalIn'])){
                     $result = $balance['totalIn'];
                 }else{
                     // Get from parity
