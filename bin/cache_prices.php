@@ -25,7 +25,7 @@ $numPrices = 0;
 $maxTimeGetPrice = 0;
 
 $es = Ethplorer::db($aConfig);
-$lock = $es->createProcessLock('prices.lock', 1200);
+$lock = $es->createProcessLock('prices.lock', 600);
 foreach($aConfig['updateRates'] as $address){
     $startGetPrice = microtime(TRUE);
     $es->getCache()->clearLocalCache();
