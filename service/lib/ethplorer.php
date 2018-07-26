@@ -2150,7 +2150,7 @@ class Ethplorer {
             $cache = 'token_full_history_grouped-' . $tsEnd;
             $cacheLifetime = FALSE;
             if($tsEnd > $tsNow){
-                $cacheLifetime = 24 * 60 * 60;
+                $cacheLifetime = 1 * 60 * 60;
             }
             $result = $this->oCache->get($cache, FALSE, TRUE, $cacheLifetime);
             // Allow generating cache only from cron jobs
