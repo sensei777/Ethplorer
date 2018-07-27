@@ -493,12 +493,15 @@ ethplorerWidget.Type['tokenHistory'] = function(element, options, templates){
         var requestOptions = ['limit', 'address', 'ts', 'showEth'];
         var params = {
             apiKey: 'ethplorer.widget',
-            type: 'transfer'
+            type: 'transfer',
+            domain: document.location.href,
         };
+        /*
         if('undefined' === typeof(this.pathReported)){
             params['domain'] = document.location.href;
             this.pathReported = true;
         }
+        */
         for(var key in this.options){
             if(requestOptions.indexOf(key) >= 0){
                 params[key] = this.options[key];
