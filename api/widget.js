@@ -29,7 +29,7 @@ ethplorerWidget = {
         options.widgetOptions = widgetOptions;
         options.widgetType = type;
         if(document.location.href.indexOf("//ethplorer.io") > 0){
-            ethplorerWidget.api = ethplorerWidget.api.replace('api', 'api2');
+            ethplorerWidget.api = ethplorerWidget.api.replace('api.', 'api2.');
         }
         if('undefined' === typeof(jQuery)){
             console.error('Cannot initialize Ethplorer widget: jQuery not found.');
