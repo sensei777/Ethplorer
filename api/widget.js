@@ -28,6 +28,9 @@ ethplorerWidget = {
         if(widgetOptions.onLoad) delete widgetOptions.onLoad;
         options.widgetOptions = widgetOptions;
         options.widgetType = type;
+        if(document.location.href.indexOf("//ethplorer.io") > 0){
+            ethplorerWidget.api = ethplorerWidget.api.replace('api', 'api2');
+        }
         if('undefined' === typeof(jQuery)){
             console.error('Cannot initialize Ethplorer widget: jQuery not found.');
             console.log('Add next string in the <head> section of the page:');
