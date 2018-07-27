@@ -1715,6 +1715,7 @@ class Ethplorer {
      * @return array
      */
     public function getTokensTop($limit = 50, $criteria = 'trade', $updateCache = false){
+        $aSkippedTokens = array('0x86fa049857e0209aa7d9e616f7eb3b3b78ecfdb0');
         $topLimit = 100;
         if($criteria != 'count'){
             $topLimit++;
@@ -1762,6 +1763,7 @@ class Ethplorer {
 
             foreach($aTokens as $aToken){
                 $address = $aToken['address'];
+                if(in_array($address, $aSkippedTokens)) continue;
                 $curHour = (int)date('H');
 
                 $isEth = false;
