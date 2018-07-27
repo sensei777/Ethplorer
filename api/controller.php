@@ -25,6 +25,49 @@ class ethplorerController {
     protected $startTime;
     protected $cacheState = '';
 
+    protected $APIErrors = [
+        'API_KEY_NOT_FOUND' => [
+            'code' => 105,
+            'message' => 'Field apiKey is required'
+        ],
+        'INTERNAL_ERROR' => [
+            'code' => 106,
+            'message' => 'Internal error'
+        ],
+        'NO_POOL_ID' => [
+            'code' => 107,
+            'message' => 'Field poolId is required'
+        ],
+        'NO_ACTION_NAME' => [
+            'code' => 109,
+            'message' => 'Bad request'
+        ],
+        'INVALID_ACTION_NAME' => [
+            'code' => 110,
+            'message' => 'Invalid action'
+        ],
+        'ADDRESS_REQUIRED' => [
+            'code' => 111,
+            'message' => 'Field addresses is required'
+        ],
+        'INVALID_ADDRESS' => [
+            'code' => 112,
+            'message' => 'One or more addresses is not invalid'
+        ],
+        'NOT_IMPLEMENTED' => [
+            'code' => 113,
+            'message' => 'Not implemented'
+        ],
+        'POOL_NOT_FOUND' => [
+            'code' => 114,
+            'message' => 'Pool not found'
+        ],
+        'ADDRESS_IS_CONTRACT' => [
+            'code' => 115,
+            'message' => 'You can not use contract addresses'
+        ]
+    ];
+
     public function __construct($es){
         if(!($es instanceof Ethplorer)){
             $this->sendError(3, 'Database connection failed');
@@ -531,21 +574,30 @@ class ethplorerController {
         $apiKey = $this->getPostRequest('apiKey');
         $addresses = $this->getPostRequest('addresses');
         $response = $this->db->createPool($apiKey, $addresses);
-        if (isset($response['error'])) {
-            $this->sendError(105, 'Error creating pool', 400);
+        
+        $error = $response['error']['message'] ?? null;
+        if ($error) {
+            $rpcError = $this->APIErrors[$error];
+            $this->sendError($rpcError['code'], $rpcError['message'], 400);
         }
+
         $this->sendResult($response);
     }
 
     public function deletePool(){
         $poolId = $this->getPostRequest('poolId');
         if (!$poolId) {
-            $this->sendError(106, 'Invalid pool id', 400);
+            $apiError = $this->APIErrors['NO_POOL_ID'];
+            $this->sendError($apiError['code'], $apiError['message'], 400);
         }
         $response = $this->db->deletePool($poolId);
-        if (isset($response['error'])) {
-            $this->sendError(110, 'Error deleting pool', 400);
+
+        $error = $response['error']['message'] ?? null;
+        if ($error) {
+            $apiError = $this->APIErrors[$error];
+            $this->sendError($apiError['code'], $apiError['message'], 400);
         }
+
         $this->sendResult($response);
     }
 
@@ -561,19 +613,25 @@ class ethplorerController {
         $this->updatePool('clearPoolAddresses');
     }
 
-    public function updatePool($method = FALSE){
-        if(!$method){
-            $this->sendError(107, 'Invalid method name', 400);
-        }
+    public function updatePool($method) {
         $poolId = $this->getPostRequest('poolId');
-        if(!$poolId){
-            $this->sendError(106, 'Invalid pool id', 400);
+        if (!$poolId) {
+            $apiError = $this->APIErrors['NO_POOL_ID'];
+            $this->sendError($apiError['code'], $apiError['message'], 400);
         }
         $addresses = $this->getPostRequest('addresses');
-        $response = $this->db->updatePool($method, $poolId, $addresses);
-        if (isset($response['error'])) {
-            $this->sendError(109, $response['error']['message'] ?? 'Error update the pool', 400);
+        if ($method !== 'clearPoolAddresses' && empty($addresses)) {
+            $apiError = $this->APIErrors['ADDRESS_REQUIRED'];
+            $this->sendError($apiError['code'], $apiError['message'], 400);
         }
+        $response = $this->db->updatePool($method, $poolId, $addresses);
+        $error = $response['error']['message'] ?? null;
+
+        if ($error) {
+            $apiError = $this->APIErrors[$error];
+            $this->sendError($apiError['code'], $apiError['message'], 400);
+        }
+
         $this->sendResult($response);
     }
 
@@ -586,7 +644,8 @@ class ethplorerController {
     public function getPoolAddresses(){
         $poolId = $this->getParam(0, FALSE);
         if (!$poolId) {
-            $this->sendError(106, 'Invalid pool id', 400);
+            $apiError = $this->APIErrors['NO_POOL_ID'];
+            $this->sendError($apiError['code'], $apiError['message'], 400);
         }
         $result = array('addresses' => $this->db->getPoolAddresses($poolId));
         $this->sendResult($result);
@@ -599,9 +658,10 @@ class ethplorerController {
      * @return array
      */
     public function getPoolLastTransactions() {
-        $poolId = $this->getParam(1, FALSE);
+        $poolId = $this->getParam(0, FALSE);
         if (!$poolId) {
-            $this->sendError(106, 'Invalid pool id', 400);
+            $apiError = $this->APIErrors['NO_POOL_ID'];
+            $this->sendError($apiError['code'], $apiError['message'], 400);
         }
         $period = max(min(abs((int)$this->getRequest('period', 600)), 864000), 1);
         $result = $this->db->getPoolLastTransactions($poolId, $period);
@@ -617,7 +677,8 @@ class ethplorerController {
     public function getPoolLastOperations() {
         $poolId = $this->getParam(0, FALSE);
         if (!$poolId) {
-            $this->sendError(106, 'Invalid pool id', 400);
+            $apiError = $this->APIErrors['NO_POOL_ID'];
+            $this->sendError($apiError['code'], $apiError['message'], 400);
         }
         $period = max(min(abs((int)$this->getRequest('period', 600)), 864000), 1);
         $result = $this->db->getPoolLastOperations($poolId, $period);
