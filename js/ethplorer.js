@@ -321,7 +321,7 @@ Ethplorer = {
         // Check TX hash format first
         txHash = txHash.toLowerCase();
         if(!/^0x[0-9a-f]{64}$/i.test(txHash)){
-            Ethplorer.gaSendEvent('pageView', 'viewTx', 'tx-invalid-hash');
+            Ethplorer.gaSendEvent('ethpPageView', 'viewTx', 'tx-invalid-hash');
             Ethplorer.error('Invalid transaction hash');
             return;
         }
@@ -343,7 +343,7 @@ Ethplorer = {
                         if(showResult) {
                             // if transaction is pending need send ga event
                             if (data.pending) {
-                                Ethplorer.gaSendEvent('pageView', 'viewTx', 'tx-pending');
+                                Ethplorer.gaSendEvent('ethpPageView', 'viewTx', 'tx-pending');
                             }
                             Ethplorer.showTxDetails(_txHash, data);
                         } else if (!data.pending) {
@@ -464,10 +464,10 @@ Ethplorer = {
 
         var oTx = txData.tx;
         if(false === oTx){
-            Ethplorer.gaSendEvent('pageView', 'viewTx', 'tx-not-found');
+            Ethplorer.gaSendEvent('ethpPageView', 'viewTx', 'tx-not-found');
             Ethplorer.error(
                 'Transaction not found',
-                'If transaction was created recently, it may not have reached mempool yet.<br/> Wait a minute and try to <a href="javascript:void()" onClick="Ethplorer.gaSendEvent(\'pageView\', \'viewTx\', \'refresh\'); setTimeout(function() {location.reload();}, 1000)">refresh</a> the page.'
+                'If transaction was created recently, it may not have reached mempool yet.<br/> Wait a minute and try to <a href="javascript:void()" onClick="Ethplorer.gaSendEvent(\'ethpPageView\', \'viewTx\', \'refresh\'); setTimeout(function() {location.reload();}, 1000)">refresh</a> the page.'
             );
             return;
         }
@@ -829,7 +829,7 @@ Ethplorer = {
         $("table").find("tr:visible:even").addClass("even");
         $("table").find("tr:visible:last").addClass("last");
         
-        Ethplorer.gaSendEvent('pageView', 'viewTx', 'tx-ok');
+        Ethplorer.gaSendEvent('ethpPageView', 'viewTx', 'tx-ok');
     },
     getAddressDetails: function(address){
         // Check Address format first
@@ -1020,7 +1020,7 @@ Ethplorer = {
                 $('#address-token-decimals').append(' <small>(estimated)</small>');
             }
 
-            Ethplorer.gaSendEvent('pageView', 'viewToken', oToken.name ? oToken.name : 'N/A');
+            Ethplorer.gaSendEvent('ethpPageView', 'viewToken', oToken.name ? oToken.name : 'N/A');
 
         }else if(data.balances && data.balances.length){
             // Fill prices
@@ -1119,7 +1119,7 @@ Ethplorer = {
             }else{
                 $('#address-balances-total').html('&nbsp;');
             }
-            Ethplorer.gaSendEvent('pageView', 'viewAddress');
+            Ethplorer.gaSendEvent('ethpPageView', 'viewAddress');
         }
 
         if(!data.isContract || !data.token){
