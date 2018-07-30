@@ -3019,12 +3019,12 @@ class Ethplorer {
      * @param int $poolId  Pool id
      * @return array
      */
-    public function getPoolAddresses($poolId, $updateCache = FALSE){
+    public function getPoolAddresses($poolId, $updateCache = FALSE) {
         evxProfiler::checkpoint('getPoolAddresses', 'START');
         $cache = 'pool_addresses-' . $poolId;
-        $aAddresses = $this->oCache->get($cache, false, true, 600) ?: '';
-        if($updateCache || (false === $aAddresses)){
-            $cursor = $this->oMongoPools->find('pools', ['uid' => $poolId]);
+        $aAddresses = $this->oCache->get($cache, false, true, 600);
+        if ($updateCache || (false === $aAddresses)) {
+            $cursor = $this->oMongoPools->find('pools', ['uid' => $poolId], false, 1);
             $result = "";
             foreach($cursor as $result) break;
             if(isset($result['addresses'])){

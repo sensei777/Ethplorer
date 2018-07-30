@@ -65,6 +65,10 @@ class ethplorerController {
         'ADDRESS_IS_CONTRACT' => [
             'code' => 115,
             'message' => 'You can not use contract addresses'
+        ],
+        'OVER_LIMIT' => [
+            'code' => 116,
+            'message' => 'Poll is full'
         ]
     ];
 
@@ -574,7 +578,7 @@ class ethplorerController {
         $apiKey = $this->getPostRequest('apiKey');
         $addresses = $this->getPostRequest('addresses');
         $response = $this->db->createPool($apiKey, $addresses);
-        
+
         $error = $response['error']['message'] ?? null;
         if ($error) {
             $rpcError = $this->APIErrors[$error];
