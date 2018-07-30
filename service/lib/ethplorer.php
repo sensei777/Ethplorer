@@ -534,7 +534,7 @@ class Ethplorer {
                 }
                 if($balance && isset($balance['balance']) && isset($balance['totalIn'])){
                     $result = $balance['totalIn'];
-                }else{
+                }elseif($parityOnly){
                     // Get from parity
                     $aResult = $this->oMongo->aggregate('operations2', array(
                         array('$match' => array("to" => $address, "isEth" => true)),
@@ -981,6 +981,7 @@ class Ethplorer {
             return $this->aTokens;
         }
         $aResult = $this->oCache->get('tokens', false, true);
+        // Allow generating cache only from cron jobs
         if(!$this->getTokensCacheCreation && ($updateCache/* || (false === $aResult)*/)){
             // Recursion protection
             $this->getTokensCacheCreation = true;
@@ -1716,6 +1717,7 @@ class Ethplorer {
      * @return array
      */
     public function getTokensTop($limit = 50, $criteria = 'trade', $updateCache = false){
+        $aSkippedTokens = array('0x86fa049857e0209aa7d9e616f7eb3b3b78ecfdb0');
         $topLimit = 100;
         if($criteria != 'count'){
             $topLimit++;
@@ -1763,6 +1765,7 @@ class Ethplorer {
 
             foreach($aTokens as $aToken){
                 $address = $aToken['address'];
+                if(in_array($address, $aSkippedTokens)) continue;
                 $curHour = (int)date('H');
 
                 $isEth = false;
@@ -2154,6 +2157,7 @@ class Ethplorer {
                 $cacheLifetime = 24 * 60 * 60;
             }
             $result = $this->oCache->get($cache, FALSE, TRUE, $cacheLifetime);
+            // Allow generating cache only from cron jobs
             if(FALSE === $result && $updateCache){
                 $result = array();
 
@@ -2180,7 +2184,7 @@ class Ethplorer {
                 );
                 if(is_array($dbData) && !empty($dbData['result'])){
                     $result = $dbData['result'];
-                    $this->oCache->save($cache, $result);
+                    $this->oCache->save($cache, $result, $cacheLifetime ? FALSE : TRUE);
                 }
             }
             if(is_array($result) && sizeof($result)){
@@ -2539,6 +2543,10 @@ class Ethplorer {
     public function getTokenPrice($address, $updateCache = FALSE){
         // evxProfiler::checkpoint('getTokenPrice', 'START', 'address=' . $address . ', updateCache=' . ($updateCache ? 'TRUE' : 'FALSE'));
         $result = FALSE;
+        // exclude eos
+        if($address == '0x86fa049857e0209aa7d9e616f7eb3b3b78ecfdb0'){
+            return $result;
+        }
         if(!$updateCache && isset($this->aPrices[$address])){
             return $this->aPrices[$address];
         }
@@ -3047,13 +3055,13 @@ class Ethplorer {
      * @param int $poolId  Pool id
      * @return array
      */
-    public function getPoolAddresses($poolId, $updateCache = FALSE){
+    public function getPoolAddresses($poolId, $updateCache = FALSE) {
         evxProfiler::checkpoint('getPoolAddresses', 'START');
         $cache = 'pool_addresses-' . $poolId;
         $aAddresses = $this->oCache->get($cache, false, true, 600);
-        if($updateCache || (false === $aAddresses)){
-            $cursor = $this->oMongoPools->find('pools', array('uid' => $poolId));
-            $result = array();
+        if ($updateCache || (false === $aAddresses)) {
+            $cursor = $this->oMongoPools->find('pools', ['uid' => $poolId], false, 1);
+            $result = "";
             foreach($cursor as $result) break;
             if(isset($result['addresses'])){
                 $aAddresses = $result['addresses'];

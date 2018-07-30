@@ -52,6 +52,11 @@ class evxCache {
     const LOCK_WAITING_REPEATS = 20;
 
     /**
+     * Lifetime key value for keys without associated expire time
+     */
+    const NON_EXPIRATION_LIFETIME = -1;
+
+    /**
      * Cache storage.
      *
      * @var array
@@ -173,7 +178,7 @@ class evxCache {
      * @param string  $entryName  Cache entry name
      * @param mixed   $data       Data to store
      */
-    public function save($entryName, $data){
+    public function save($entryName, $data, $nonExpiration = FALSE){
         $saveRes = false;
         $this->store($entryName, $data);
         switch($this->driver){
@@ -184,7 +189,9 @@ class evxCache {
                     $lifetime = time() + $cacheLifetime;
                 }*/
                 $ttl = evxCache::DAY;
-                if(!$lifetime){
+                if($nonExpiration){
+                    $lifetime = evxCache::NON_EXPIRATION_LIFETIME;
+                }else if(!$lifetime){
                     // 1 day if cache lifetime is not set
                     $lifetime = time() + evxCache::DAY;
                 }else{
@@ -193,7 +200,11 @@ class evxCache {
                 }
                 $aCachedData = array('lifetime' => $lifetime, 'data' => $data, 'lock' => true);
                 if('redis' == $this->driver){
-                    $saveRes = $this->oDriver->set($entryName, json_encode($aCachedData), 'ex', $ttl);
+                    if($nonExpiration){
+                        $saveRes = $this->oDriver->set($entryName, json_encode($aCachedData));
+                    }else{
+                        $saveRes = $this->oDriver->set($entryName, json_encode($aCachedData), 'ex', $ttl);
+                    }
                     $this->oDriver->getConnection()->switchToSlave();
                 }else{
                     $saveRes = $this->oDriver->set($entryName, $aCachedData);
@@ -292,7 +303,7 @@ class evxCache {
             $memcachedData = ('redis' == $this->driver) ? json_decode($this->oDriver->get($entryName), TRUE) : $this->oDriver->get($entryName);
             if($memcachedData && isset($memcachedData['lifetime']) && isset($memcachedData['data'])){
                 $result['data'] = $memcachedData['data'];
-                if($memcachedData['lifetime'] < time()){
+                if($memcachedData['lifetime'] > 0 && $memcachedData['lifetime'] < time()){
                     $result['expired'] = TRUE;
                 }
             }
