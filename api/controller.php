@@ -68,7 +68,7 @@ class ethplorerController {
         ],
         'OVER_LIMIT' => [
             'code' => 116,
-            'message' => 'Poll is full'
+            'message' => 'Pool capacity limit reached'
         ]
     ];
 
