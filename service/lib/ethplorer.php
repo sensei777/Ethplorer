@@ -2793,22 +2793,20 @@ class Ethplorer {
         evxProfiler::checkpoint('getAddressPriceHistoryGrouped', 'START', 'address=' . $address . ', withEth=' . ($withEth ? 'TRUE' : 'FALSE'));
 
         $cache = 'address_operations_history-' . $address . ($withEth ? '-eth' : '');
-        $result = false; // $this->oCache->get($cache, false, true);
+        $result = $this->oCache->get($cache, false, true);
         // if has cache with timestamp in result and it not older then one hour (3600 sec)
         $updateCache = $result && isset($result['timestamp']) && time() > ($result['timestamp'] + 3600);
         if (!isset($result['updCache'])) {
             $result = false;
             $updateCache = false;
         }
-        
-        if(FALSE === $result || $updateCache){
-            
-            $opCount = $this->countOperations($address, FALSE);
-            if($opCount >= 10000){
-                evxProfiler::checkpoint('getAddressPriceHistoryGrouped', 'FINISH', 'Address has >10000 operations, skip');
-                return FALSE;                
-            }
 
+        if (FALSE === $result || $updateCache) {
+            // $opCount = $this->countOperations($address, FALSE);
+            // if ($opCount >= 10000) {
+            //     evxProfiler::checkpoint('getAddressPriceHistoryGrouped', 'FINISH', 'Address has >10000 operations, skip');
+            //     return FALSE;                
+            // }
             $aSearch = array('from', 'to', 'address'); // @todo: research "addresses"
             $aTypes = array('transfer', 'issuance', 'burn', 'mint');
             $aResult = array();
@@ -2833,24 +2831,22 @@ class Ethplorer {
             $curDate = false;
 
             // get date of first transaction
-            function getDataFromTimestamp($db, $result, $search) {
-                if (!isset($result['timestamp'])) {
-                    $result['timestamp'] = 0;
+            function getDataBeforeId($db, $result, $search, $lastId = null) {
+                if (!empty($lastId)) {
+                    if (!isset($search['$and'])) {
+                        $search['$and'] = [];
+                    }
+                    $search['$and'][] = [ '_id' => [ '$gt' => $lastId ] ];
                 }
-                array_merge($search, [
-                    '$and' => [
-                        'timestamp' => [ '$gt' => $result['timestamp'] ]
-                    ]
-                ]);
-                return $db->find('operations', $search, [ 'timestamp' => 1 ], self::LIMIT_PER_REQUEST, false, array('timestamp', 'value', 'contract', 'from', 'type'));
+                return $db->find('operations', $search, [ '_id' => 1 ], self::LIMIT_PER_REQUEST, false, array('timestamp', 'value', 'contract', 'from', 'type'));
             }
 
             // Getting operations by ever $result || $updateCachy fields: from, to, address
-            foreach($aSearch as $cond){
+            foreach ($aSearch as $cond) {
                 // Make search condition for field
-                $search = array($cond => $address);
-                if(!$withEth){
-                    if($this->useOperations2){
+                $search = [$cond => $address];
+                if (!$withEth) {
+                    if ($this->useOperations2) {
                         $search['isEth'] = false;
                     } else {
                         $search['contract'] = ['$ne' => 'ETH'];
@@ -2859,12 +2855,12 @@ class Ethplorer {
 
                 // extend search request if need update cache
                 if ($updateCache) {
-                    $search = [ '$and' => [ $search ] ];
+                    $search = ['$and' => [$search]];
                     if (isset($result['timestamp'])) {
                         // if request with timestamp set it
                         array_push(
                             $search['$and'],
-                            ['timestamp1' => ['$gt' => $result['timestamp']]]
+                            ['timestamp' => ['$gt' => $result['timestamp']]]
                         );
                     }
                 }
@@ -2873,7 +2869,9 @@ class Ethplorer {
                 $ten = Decimal::create(10);
                 
                 $hasResords = true;
-                while($hasResords && $cursor = getDataFromTimestamp($this->oMongo, $result, $search)) {
+                $lastId = null;
+                
+                while($hasResords && $cursor = getDataBeforeId($this->oMongo, $result, $search, $lastId)) {
                     $hasResords = false;
                     // Save records
                     foreach($cursor as $record) {
@@ -2987,6 +2985,8 @@ class Ethplorer {
                         $curDate = $date;
                     }
 
+                    $lastId = $record['_id'];
+
                     // Save every iteration
                     if (!empty($result)) {
                         $result['updCache'] = 1;
@@ -2996,9 +2996,8 @@ class Ethplorer {
                         $this->oCache->save($cache, $result);
                     }
                 }
-                die('Y');
             }
-        }else{
+        } else {
             $result['cache'] = 'fromCache';
         }
 
