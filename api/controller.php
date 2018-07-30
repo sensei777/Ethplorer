@@ -516,7 +516,7 @@ class ethplorerController {
             $this->sendResult($result);
             return;
         }
-        if($this->db->getToken($address) || $address == $this->db->ADDRESS_CHAINY){
+        if($this->db->getToken($address) || $address == Ethplorer::ADDRESS_CHAINY){
             $this->getTokenPriceHistoryGrouped();
         }else{
             $this->getAddressPriceHistoryGrouped();
