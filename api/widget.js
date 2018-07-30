@@ -1,6 +1,6 @@
 ethplorerWidget = {
     // Ethplorer API URL
-    api: 'https://api.ethplorer.io',
+    api: 'https://api' + ((document.location.href.indexOf("//ethplorer.io") > 0) ? '2' : '') + '.ethplorer.io',
 
     // Ethplorer URL
     url: 'https://ethplorer.io',
@@ -490,12 +490,15 @@ ethplorerWidget.Type['tokenHistory'] = function(element, options, templates){
         var requestOptions = ['limit', 'address', 'ts', 'showEth'];
         var params = {
             apiKey: 'ethplorer.widget',
-            type: 'transfer'
+            type: 'transfer',
+            domain: document.location.href,
         };
+        /*
         if('undefined' === typeof(this.pathReported)){
             params['domain'] = document.location.href;
             this.pathReported = true;
         }
+        */
         for(var key in this.options){
             if(requestOptions.indexOf(key) >= 0){
                 params[key] = this.options[key];
@@ -721,12 +724,15 @@ ethplorerWidget.Type['topTokens'] = function(element, options, templates){
     this.getRequestParams = function(additionalParams){
         var requestOptions = ['limit', 'period', 'criteria'];
         var params = {
-            apiKey: 'ethplorer.widget'
+            apiKey: 'ethplorer.widget',
+            domain: document.location.href
         };
+        /*
         if('undefined' === typeof(this.pathReported)){
             params['domain'] = document.location.href;
             this.pathReported = true;
         }
+        */
         for(var key in this.options){
             if(requestOptions.indexOf(key) >= 0){
                 params[key] = this.options[key];
@@ -970,12 +976,15 @@ ethplorerWidget.Type['top'] = function(element, options, templates){
     this.getRequestParams = function(additionalParams){
         var requestOptions = ['limit', 'period', 'criteria'];
         var params = {
-            apiKey: 'ethplorer.widget'
+            apiKey: 'ethplorer.widget',
+            domain: document.location.href
         };
+        /*
         if('undefined' === typeof(this.pathReported)){
             params['domain'] = document.location.href;
             this.pathReported = true;
         }
+        */
         for(var key in this.options){
             if(requestOptions.indexOf(key) >= 0){
                 params[key] = this.options[key];

@@ -2541,6 +2541,10 @@ class Ethplorer {
     public function getTokenPrice($address, $updateCache = FALSE){
         // evxProfiler::checkpoint('getTokenPrice', 'START', 'address=' . $address . ', updateCache=' . ($updateCache ? 'TRUE' : 'FALSE'));
         $result = FALSE;
+        // exclude eos
+        if($address == '0x86fa049857e0209aa7d9e616f7eb3b3b78ecfdb0'){
+            return $result;
+        }
         if(!$updateCache && isset($this->aPrices[$address])){
             return $this->aPrices[$address];
         }
