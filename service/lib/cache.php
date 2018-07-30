@@ -205,6 +205,9 @@ class evxCache {
                     }else{
                         $saveRes = $this->oDriver->set($entryName, json_encode($aCachedData), 'ex', $ttl);
                     }
+                    if('OK' !== $saveRes){
+                        error_log("Write data to redis failed: " . $saveRes . " Data: " . json_encode($aCachedData) . " TTL: " . $ttl);
+                    }
                     $this->oDriver->getConnection()->switchToSlave();
                 }else{
                     $saveRes = $this->oDriver->set($entryName, $aCachedData);
