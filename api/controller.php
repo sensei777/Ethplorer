@@ -651,6 +651,13 @@ class ethplorerController {
             $apiError = $this->APIErrors['NO_POOL_ID'];
             $this->sendError($apiError['code'], $apiError['message'], 400);
         }
+
+        $addresses = $this->db->getPoolAddresses($poolId);
+        if ($addresses === false) {
+            $apiError = $this->APIErrors['POOL_NOT_FOUND'];
+            $this->sendError($apiError['code'], $apiError['message'], 400);
+        }
+
         $result = array('addresses' => $this->db->getPoolAddresses($poolId));
         $this->sendResult($result);
     }
@@ -667,8 +674,15 @@ class ethplorerController {
             $apiError = $this->APIErrors['NO_POOL_ID'];
             $this->sendError($apiError['code'], $apiError['message'], 400);
         }
+
+        if (!$this->db->isPoolExist($poolId)) {
+            $apiError = $this->APIErrors['POOL_NOT_FOUND'];
+            $this->sendError($apiError['code'], $apiError['message'], 400);
+        }
+
         $period = max(min(abs((int)$this->getRequest('period', 600)), 864000), 1);
         $result = $this->db->getPoolLastTransactions($poolId, $period);
+
         $this->sendResult($result);
     }
 
@@ -684,6 +698,12 @@ class ethplorerController {
             $apiError = $this->APIErrors['NO_POOL_ID'];
             $this->sendError($apiError['code'], $apiError['message'], 400);
         }
+
+        if (!$this->db->isPoolExist($poolId)) {
+            $apiError = $this->APIErrors['POOL_NOT_FOUND'];
+            $this->sendError($apiError['code'], $apiError['message'], 400);
+        }
+
         $period = max(min(abs((int)$this->getRequest('period', 600)), 864000), 1);
         $result = $this->db->getPoolLastOperations($poolId, $period);
         $this->sendResult($result);

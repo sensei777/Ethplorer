@@ -2997,6 +2997,24 @@ class Ethplorer {
     }
 
     /**
+     * Return true if pool exist
+     * @param String poolId
+     * @return Array
+     */
+    public function isPoolExist($poolId) {
+        evxProfiler::checkpoint('isPoolExist', 'START');
+        $cache = "pool-exist-{$poolId}";
+        $pool = $this->oCache->get($cache, null, true, 600);
+        if ($pool === null) {
+            $cursor = $this->oMongoPools->find('pools', [ 'uid' => $poolId ], false, 1, false, [ 'uid' => 1 ]);
+            foreach($cursor as $result) break;
+            $this->oCache->save($cache, !empty($result));
+        }
+        evxProfiler::checkpoint('isPoolExist', 'FINISH');
+        return $pool;
+    }
+
+    /**
      * Create pool
      * @param String $apiKey
      * @param String $addresses
@@ -3008,6 +3026,10 @@ class Ethplorer {
 
     public function deletePool($poolId = NULL){
         return $this->_jsonrpcall($this->aSettings['pools'], 'deletePool', array($poolId));
+        // remove from cache
+        $this->oCache->delete("pool_addresses-{$poolId}");
+        $this->oCache->delete("pool-exist-{$poolId}");
+
     }
 
     public function updatePool($method = NULL, $poolId = NULL, $addresses = NULL){
@@ -3026,7 +3048,7 @@ class Ethplorer {
     public function getPoolAddresses($poolId, $updateCache = FALSE) {
         evxProfiler::checkpoint('getPoolAddresses', 'START');
         $cache = 'pool_addresses-' . $poolId;
-        $aAddresses = $this->oCache->get($cache, false, true, 600);
+        $aAddresses = $this->oCache->get($cache, "", true, 600);
         if ($updateCache || (false === $aAddresses)) {
             $cursor = $this->oMongoPools->find('pools', ['uid' => $poolId], false, 1);
             $result = "";
