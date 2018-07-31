@@ -3205,6 +3205,9 @@ class Ethplorer {
         );
         $result = false;
         $json = json_encode($data);
+        if(filter_input(INPUT_REQUEST, "debugRPC")){
+            echo "Request: " . var_export($json, true) . "\n";
+        }        
         $ch = curl_init($service);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_HTTPHEADER, array(
@@ -3216,6 +3219,10 @@ class Ethplorer {
         curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
         curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
         $rjson = curl_exec($ch);
+        if(filter_input(INPUT_REQUEST, "debugRPC")){
+            echo "Response: " . var_export($rjson, true) . "\n";
+            die;
+        }
         if($rjson && (is_string($rjson)) && ('{' === $rjson[0])){
             $json = json_decode($rjson, JSON_OBJECT_AS_ARRAY);
             if(isset($json["result"])){
