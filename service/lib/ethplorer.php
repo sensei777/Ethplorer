@@ -3227,7 +3227,7 @@ class Ethplorer {
         );
         $result = false;
         $json = json_encode($data);
-        if(filter_input(INPUT_REQUEST, "debugRPC")){
+        if(filter_input(INPUT_GET, "debugRPC")){
             echo "Request: " . var_export($json, true) . "\n";
         }        
         $ch = curl_init($service);
@@ -3241,7 +3241,7 @@ class Ethplorer {
         curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
         curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
         $rjson = curl_exec($ch);
-        if(filter_input(INPUT_REQUEST, "debugRPC")){
+        if(filter_input(INPUT_GET, "debugRPC")){
             echo "Response: " . var_export($rjson, true) . "\n";
             die;
         }
