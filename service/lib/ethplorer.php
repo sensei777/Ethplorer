@@ -3004,14 +3004,15 @@ class Ethplorer {
     public function isPoolExist($poolId) {
         evxProfiler::checkpoint('isPoolExist', 'START');
         $cache = "pool-exist-{$poolId}";
-        $pool = $this->oCache->get($cache, null, true, 600);
-        if ($pool === null) {
+        $result = $this->oCache->get($cache, false, true, 600);
+        if ($result === false) {
             $cursor = $this->oMongoPools->find('pools', [ 'uid' => $poolId ], false, 1, false, [ 'uid' => 1 ]);
-            foreach($cursor as $result) break;
-            $this->oCache->save($cache, !empty($result));
+            foreach($cursor as $pool) break;
+            $result = !empty($pool);
+            $this->oCache->save($cache, $result);
         }
         evxProfiler::checkpoint('isPoolExist', 'FINISH');
-        return $pool;
+        return $result;
     }
 
     /**
