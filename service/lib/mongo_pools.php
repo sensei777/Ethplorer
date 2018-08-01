@@ -46,8 +46,8 @@ class evxMongoPools extends evxMongo {
                 $oDB = $this->oMongo->{$this->dbName};
                 $this->aDBs = array(
                     'pools'        => $oDB->pools,
-                    'transactions' => $oDB->transactions,
-                    'operations'   => $oDB->operations
+                    'transactions' => $oDB->monitor_transactions,
+                    'operations'   => $oDB->monitor_operations
                 );
                 break;
             // php version 5.6, 7.x use mongodb extension
@@ -55,8 +55,8 @@ class evxMongoPools extends evxMongo {
                 $this->oMongo = new MongoDB\Driver\Manager($aSettings['server']);
                 $this->aDBs = array(
                     'pools'        => "pools",
-                    'transactions' => "transactions",
-                    'operations'   => "operations"
+                    'transactions' => "monitor_transactions",
+                    'operations'   => "monitor_operations"
                 );
                 break;                
             default:

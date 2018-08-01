@@ -3018,14 +3018,15 @@ class Ethplorer {
     public function isPoolExist($poolId) {
         evxProfiler::checkpoint('isPoolExist', 'START');
         $cache = "pool-exist-{$poolId}";
-        $pool = $this->oCache->get($cache, null, true, 600);
-        if ($pool === null) {
+        $result = $this->oCache->get($cache, false, true, 600);
+        if ($result === false) {
             $cursor = $this->oMongoPools->find('pools', [ 'uid' => $poolId ], false, 1, false, [ 'uid' => 1 ]);
-            foreach($cursor as $result) break;
-            $this->oCache->save($cache, !empty($result));
+            foreach($cursor as $pool) break;
+            $result = !empty($pool);
+            $this->oCache->save($cache, $result);
         }
         evxProfiler::checkpoint('isPoolExist', 'FINISH');
-        return $pool;
+        return $result;
     }
 
     /**
@@ -3088,9 +3089,9 @@ class Ethplorer {
         $cache = 'pool_transactions-' . $poolId. '-' . $period;
         $aTxs = $this->oCache->get($cache, false, true, 300);
         if($updateCache || (false === $aTxs)){
-            $cursor = $this->oMongoPools->find('transactions', array('pool' => $poolId, 'timestamp' => array('$gte' => time() - $period)), array("timestamp" => -1));
+            $cursor = $this->oMongoPools->find('transactions', ['pools' => $poolId, 'timestamp' => ['$gte' => time() - $period] ], ['timestamp' => -1]);
             $aTxs = array();
-            foreach($cursor as $tx){
+            foreach($cursor as $tx) {
                 $aAddresses = [$tx["from"]];
                 if($tx["from"] != $tx["to"]){
                     $aAddresses[] = $tx["to"];
@@ -3136,7 +3137,7 @@ class Ethplorer {
         $cache = 'pool_operations-' . $poolId. '-' . $period;
         $aOps = $this->oCache->get($cache, false, true, 300);
         if($updateCache || (false === $aOps)){
-            $cursor = $this->oMongoPools->find('operations', array('pool' => $poolId, 'contract' => array('$ne' => 'ETH'), 'timestamp' => array('$gte' => time() - $period)), array("timestamp" => -1));
+            $cursor = $this->oMongoPools->find('operations', array('pools' => $poolId, 'contract' => array('$ne' => 'ETH'), 'timestamp' => array('$gte' => time() - $period)), array("timestamp" => -1));
             $aOps = array();
             foreach($cursor as $op){
                 $aAddresses = [$op["from"]];
