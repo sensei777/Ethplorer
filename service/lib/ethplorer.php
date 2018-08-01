@@ -3087,7 +3087,7 @@ class Ethplorer {
     public function getPoolLastTransactions($poolId, $period, $updateCache = FALSE){
         evxProfiler::checkpoint('getPoolLastTransactions', 'START');
         $cache = 'pool_transactions-' . $poolId. '-' . $period;
-        $aTxs = $this->oCache->get($cache, false, true, 300);
+        $aTxs = $this->oCache->get($cache, false, true, 30);
         if($updateCache || (false === $aTxs)){
             $cursor = $this->oMongoPools->find('transactions', ['pools' => $poolId, 'timestamp' => ['$gte' => time() - $period] ], ['timestamp' => -1]);
             $aTxs = [];
@@ -3141,7 +3141,7 @@ class Ethplorer {
     public function getPoolLastOperations($poolId, $period, $updateCache = FALSE){
         evxProfiler::checkpoint('getPoolLastOperations', 'START');
         $cache = 'pool_operations-' . $poolId. '-' . $period;
-        $aOps = $this->oCache->get($cache, false, true, 300);
+        $aOps = $this->oCache->get($cache, false, true, 30);
         if($updateCache || (false === $aOps)){
             $cursor = $this->oMongoPools->find('operations', array('pools' => $poolId, 'timestamp' => array('$gte' => time() - $period)), array("timestamp" => -1));
             $aOps = array();
