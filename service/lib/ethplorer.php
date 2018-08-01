@@ -3162,10 +3162,16 @@ class Ethplorer {
                 ];
                 
                 if (stripos($poolAddresses, $op["from"]) !== false) {
-                    $aOps[$op["from"]] = $operation;
+                    if (!is_array($aOps[$op["from"]])) {
+                        $aOps[$op["from"]] = [];
                     }
+                    $aOps[$op["from"]] = $operation;
+                }
 
                 if (stripos($poolAddresses, $op["to"]) !== false) {
+                    if (!is_array($aOps[$op["to"]])) {
+                        $aOps[$op["to"]] = [];
+                    }
                     $aOps[$op["to"]] = $operation;
                 }
             }
