@@ -213,7 +213,8 @@ class ethplorerController {
         if($result && is_array($result)){
             unset($result['checked']);
             unset($result['txsCount']);
-            // unset($result['transfersCount']);
+
+            $result['countOps'] = isset($result['transfersCount']) ? $result['transfersCount'] : 0;
 
             // @todo: check what's wrong with cache
             /*
