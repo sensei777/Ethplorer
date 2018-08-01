@@ -3084,7 +3084,7 @@ class Ethplorer {
      * @param int $period  Period
      * @return array
      */
-    public function getPoolLastTransactions($poolId, $period, $updateCache = FALSE){
+    public function getPoolLastTransactions($poolId, $period, $updateCache = false) {
         evxProfiler::checkpoint('getPoolLastTransactions', 'START');
         $cache = 'pool_transactions-' . $poolId. '-' . $period;
         $aTxs = $this->oCache->get($cache, false, true, 30);
@@ -3138,7 +3138,7 @@ class Ethplorer {
      * @param int $period  Period
      * @return array
      */
-    public function getPoolLastOperations($poolId, $period, $updateCache = FALSE){
+    public function getPoolLastOperations($poolId, $period, $updateCache = false) {
         evxProfiler::checkpoint('getPoolLastOperations', 'START');
         $cache = 'pool_operations-' . $poolId. '-' . $period;
         $aOps = $this->oCache->get($cache, false, true, 30);
