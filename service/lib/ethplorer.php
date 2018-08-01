@@ -2237,6 +2237,20 @@ class Ethplorer {
         return $result;
     }
 
+    public function getAllowedAPICommands(array $commands){
+        $result = array();
+        if(!empty($this->aSettings['allowedMethods'])){
+            foreach($this->aSettings['allowedMethods'] as $command){
+                if(in_array($command, $commands)){
+                    $result[] = $command;
+                }
+            }
+        }else{
+            $result = $commands;
+        }
+        return $result;
+    }
+
     public function checkAPIKey($key){
         return isset($this->aSettings['apiKeys']) && isset($this->aSettings['apiKeys'][$key]);
     }
