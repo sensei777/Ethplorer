@@ -3084,47 +3084,40 @@ class Ethplorer {
      * @param int $period  Period
      * @return array
      */
-    public function getPoolLastTransactions($poolId, $period, $updateCache = FALSE){
+    public function getPoolLastTransactions($poolId, $period) {
         evxProfiler::checkpoint('getPoolLastTransactions', 'START');
-        $cache = 'pool_transactions-' . $poolId. '-' . $period;
-        $aTxs = $this->oCache->get($cache, false, true, 300);
-        if($updateCache || (false === $aTxs)){
-            $cursor = $this->oMongoPools->find('transactions', ['pools' => $poolId, 'timestamp' => ['$gte' => time() - $period] ], ['timestamp' => -1]);
-            $aTxs = [];
-            $poolAddresses = $this->getPoolAddresses($poolId);
-            foreach($cursor as $tx) {
-                $gasLimit = $tx['gas'];
-                $gasUsed = isset($tx['gasUsed']) ? $tx['gasUsed'] : 0;
-                $success = ((21000 == $gasUsed) || ($gasUsed < $gasLimit));
-                $success = isset($tx['status']) ? $this->txSuccessStatus($tx) : $success;
-                $transaction = [
-                    'timestamp' => $tx["timestamp"],
-                    'blockNumber' => $tx["blockNumber"],
-                    'from' => $tx["from"],
-                    'to' => $tx["to"],
-                    'hash' => $tx["hash"],
-                    'value' => $tx["value"],
-                    'input' => $tx["input"],
-                    'balances' => $tx["balances"],
-                    'success' => $success
-                ];
+        $cursor = $this->oMongoPools->find('transactions', ['pools' => $poolId, 'timestamp' => ['$gte' => time() - $period] ], ['timestamp' => -1]);
+        $aTxs = [];
+        $poolAddresses = $this->getPoolAddresses($poolId);
+        foreach($cursor as $tx) {
+            $gasLimit = $tx['gas'];
+            $gasUsed = isset($tx['gasUsed']) ? $tx['gasUsed'] : 0;
+            $success = ((21000 == $gasUsed) || ($gasUsed < $gasLimit));
+            $success = isset($tx['status']) ? $this->txSuccessStatus($tx) : $success;
+            $transaction = [
+                'timestamp' => $tx["timestamp"],
+                'blockNumber' => $tx["blockNumber"],
+                'from' => $tx["from"],
+                'to' => $tx["to"],
+                'hash' => $tx["hash"],
+                'value' => $tx["value"],
+                'input' => $tx["input"],
+                'balances' => $tx["balances"],
+                'success' => $success
+            ];
 
-                if (stripos($poolAddresses, $tx["from"]) !== false) {
-                    if (!is_array($aTxs[$tx["from"]])) {
-                        $aTxs[$tx["from"]] = [];
-                    }
-                    $aTxs[$tx["from"]][] = $transaction;
+            if (stripos($poolAddresses, $tx["from"]) !== false) {
+                if (!is_array($aTxs[$tx["from"]])) {
+                    $aTxs[$tx["from"]] = [];
                 }
-
-                if (stripos($poolAddresses, $tx["to"]) !== false) {
-                    if (!is_array($aTxs[$tx["to"]])) {
-                        $aTxs[$tx["to"]] = [];
-                    }
-                    $aTxs[$tx["to"]][] = $transaction;
-                }
+                $aTxs[$tx["from"]][] = $transaction;
             }
-            if($aTxs){
-                $this->oCache->save($cache, $aTxs);
+
+            if (stripos($poolAddresses, $tx["to"]) !== false) {
+                if (!is_array($aTxs[$tx["to"]])) {
+                    $aTxs[$tx["to"]] = [];
+                }
+                $aTxs[$tx["to"]][] = $transaction;
             }
         }
         evxProfiler::checkpoint('getPoolLastTransactions', 'FINISH');
@@ -3138,45 +3131,38 @@ class Ethplorer {
      * @param int $period  Period
      * @return array
      */
-    public function getPoolLastOperations($poolId, $period, $updateCache = FALSE){
+    public function getPoolLastOperations($poolId, $period) {
         evxProfiler::checkpoint('getPoolLastOperations', 'START');
-        $cache = 'pool_operations-' . $poolId. '-' . $period;
-        $aOps = $this->oCache->get($cache, false, true, 300);
-        if($updateCache || (false === $aOps)){
-            $cursor = $this->oMongoPools->find('operations', array('pools' => $poolId, 'timestamp' => array('$gte' => time() - $period)), array("timestamp" => -1));
-            $aOps = array();
-            $poolAddresses = $this->getPoolAddresses($poolId);
-            foreach($cursor as $op) {
-                $operation = [
-                    'timestamp' => $op["timestamp"],
-                    'blockNumber' => $op["blockNumber"],
-                    'contract' => $op["contract"],
-                    'value' => $op["value"],
-                    'type' => $op["type"],
-                    'priority' => $op["priority"],
-                    'from' => $op["from"],
-                    'to' => $op["to"],
-                    'addresses' => $op["addresses"],
-                    'hash' => $op["hash"],
-                    'balances' => $op["balances"]
-                ];
-                
-                if (stripos($poolAddresses, $op["from"]) !== false) {
-                    if (!is_array($aOps[$op["from"]])) {
-                        $aOps[$op["from"]] = [];
-                    }
-                    $aOps[$op["from"]] = $operation;
+        $cursor = $this->oMongoPools->find('operations', array('pools' => $poolId, 'timestamp' => array('$gte' => time() - $period)), array("timestamp" => -1));
+        $aOps = array();
+        $poolAddresses = $this->getPoolAddresses($poolId);
+        foreach($cursor as $op) {
+            $operation = [
+                'timestamp' => $op["timestamp"],
+                'blockNumber' => $op["blockNumber"],
+                'contract' => $op["contract"],
+                'value' => $op["value"],
+                'type' => $op["type"],
+                'priority' => $op["priority"],
+                'from' => $op["from"],
+                'to' => $op["to"],
+                'addresses' => $op["addresses"],
+                'hash' => $op["hash"],
+                'balances' => $op["balances"]
+            ];
+            
+            if (stripos($poolAddresses, $op["from"]) !== false) {
+                if (!is_array($aOps[$op["from"]])) {
+                    $aOps[$op["from"]] = [];
                 }
-
-                if (stripos($poolAddresses, $op["to"]) !== false) {
-                    if (!is_array($aOps[$op["to"]])) {
-                        $aOps[$op["to"]] = [];
-                    }
-                    $aOps[$op["to"]] = $operation;
-                }
+                $aOps[$op["from"]] = $operation;
             }
-            if($aOps){
-                $this->oCache->save($cache, $aOps);
+
+            if (stripos($poolAddresses, $op["to"]) !== false) {
+                if (!is_array($aOps[$op["to"]])) {
+                    $aOps[$op["to"]] = [];
+                }
+                $aOps[$op["to"]] = $operation;
             }
         }
         evxProfiler::checkpoint('getPoolLastOperations', 'FINISH');
