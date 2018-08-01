@@ -16,6 +16,7 @@
  */
 
 class ethplorerController {
+    protected $apiKey;
     protected $db;
     protected $command;
     protected $params = array();
@@ -103,9 +104,6 @@ class ethplorerController {
         $ms = round(microtime(TRUE) - $this->startTime, 4);
         $date = date("Y-m-d H:i");
         $key = $this->getRequest('apiKey', "-");
-        if($key && ('freekey' !== $key)){
-            file_put_contents($cacheDir . '/apiKey-' . md5($key) . '.tmp', $date);
-        }
         $source = $this->getRequest('domain', FALSE);
         if($source){
             file_put_contents($logsDir . '/widget-request.log', "[$date] Widget: {$this->command}, source: {$source}\n", FILE_APPEND);
@@ -158,8 +156,10 @@ class ethplorerController {
     public function run(){
         $result = FALSE;
         $command = $this->getCommand();
-        if($command && (in_array($command, $this->apiCommands) || in_array($command, $this->apiPostCommands)) && method_exists($this, $command)){
-            $key = in_array($command, $this->apiCommands) ? $this->getRequest('apiKey', FALSE) : $this->getPostRequest('apiKey', FALSE);
+        $isMethodGET = in_array($command, $this->db->getAllowedAPICommands($this->apiCommands));
+        $isMethodPOST = in_array($command, $this->db->getAllowedAPICommands($this->apiPostCommands));
+        if($command && ($isMethodGET || $isMethodPOST) && method_exists($this, $command)){
+            $key = $isMethodGET ? $this->getRequest('apiKey', FALSE) : $this->getPostRequest('apiKey', FALSE);
             if(!$key || !$this->db->checkAPIkey($key)){
                 $this->sendError(1, 'Invalid API key', 403);
             }
@@ -169,7 +169,7 @@ class ethplorerController {
                 $this->sendError(133, 'API key temporary suspended. Contact support.', 403);
             }
             
-            if(in_array($command, $this->apiPostCommands)){
+            if($isMethodPOST){
                 // @todo: Temporary solution, special key property will be used later
                 if($key == "freekey"){
                     $this->sendError(1, 'Invalid API key', 403);
@@ -181,6 +181,7 @@ class ethplorerController {
             $timestamp = $this->getRequest('ts', FALSE);
             $needCache = (FALSE !== $timestamp) || ($command === 'getAddressHistory');
 
+            $this->apiKey = $key;
             if($needCache){
                 $cacheId = 'API-' . $command  . '-' . md5($_SERVER["REQUEST_URI"]);
                 $oCache = $this->db->getCache();
@@ -214,15 +215,18 @@ class ethplorerController {
         if($result && is_array($result)){
             unset($result['checked']);
             unset($result['txsCount']);
-            // unset($result['transfersCount']);
+
+            $result['countOps'] = isset($result['transfersCount']) ? $result['transfersCount'] : 0;
 
             // @todo: check what's wrong with cache
+            /*
             $result['countOps'] = $this->db->countOperations($address);
             $result['transfersCount'] = (int)$result['countOps'];
             if(isset($result['issuancesCount']) && $result['issuancesCount']){
                 $result['transfersCount'] = $result['transfersCount'] - (int)$result['issuancesCount'];
             }
             $result['holdersCount'] = $this->db->getTokenHoldersCount($address);
+            */
         }else{
             $this->sendError(150, 'Address is not a token contract');
         }
