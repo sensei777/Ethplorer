@@ -16,6 +16,7 @@
  */
 
 class ethplorerController {
+    protected $apiKey;
     protected $db;
     protected $command;
     protected $params = array();
@@ -180,6 +181,7 @@ class ethplorerController {
             $timestamp = $this->getRequest('ts', FALSE);
             $needCache = (FALSE !== $timestamp) || ($command === 'getAddressHistory');
 
+            $this->apiKey = $key;
             if($needCache){
                 $cacheId = 'API-' . $command  . '-' . md5($_SERVER["REQUEST_URI"]);
                 $oCache = $this->db->getCache();
