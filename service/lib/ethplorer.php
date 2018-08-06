@@ -218,6 +218,15 @@ class Ethplorer {
     }
 
     /**
+     * Returns mongo object
+     *
+     * @return evxMongo
+     */
+    public function getMongo(){
+        return $this->oMongo;
+    }
+
+    /**
      * Returns some debug data
      *
      * @return array
