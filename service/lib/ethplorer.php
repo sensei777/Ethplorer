@@ -3156,7 +3156,6 @@ class Ethplorer {
                     'priority' => $op["priority"],
                     'from' => $op["from"],
                     'to' => $op["to"],
-                    'addresses' => $op["addresses"],
                     'hash' => $op["hash"],
                     'balances' => $op["balances"]
                 ];
