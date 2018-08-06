@@ -3165,21 +3165,21 @@ class Ethplorer {
                     if (!is_array($aOps[$op["contract"]])) {
                         $aOps[$op["contract"]] = [];
                     }
-                    $aOps[$op["contract"]] = $operation;
+                    $aOps[$op["contract"]][] = $operation;
                 }
                 
                 if (stripos($poolAddresses, $op["from"]) !== false) {
                     if (!is_array($aOps[$op["from"]])) {
                         $aOps[$op["from"]] = [];
                     }
-                    $aOps[$op["from"]] = $operation;
+                    $aOps[$op["from"]][] = $operation;
                 }
 
                 if (stripos($poolAddresses, $op["to"]) !== false) {
                     if (!is_array($aOps[$op["to"]])) {
                         $aOps[$op["to"]] = [];
                     }
-                    $aOps[$op["to"]] = $operation;
+                    $aOps[$op["to"]][] = $operation;
                 }
             }
             if($aOps){
