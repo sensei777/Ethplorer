@@ -3160,6 +3160,13 @@ class Ethplorer {
                     'hash' => $op["hash"],
                     'balances' => $op["balances"]
                 ];
+
+                if (stripos($poolAddresses, $op["contract"]) !== false) {
+                    if (!is_array($aOps[$op["contract"]])) {
+                        $aOps[$op["contract"]] = [];
+                    }
+                    $aOps[$op["contract"]] = $operation;
+                }
                 
                 if (stripos($poolAddresses, $op["from"]) !== false) {
                     if (!is_array($aOps[$op["from"]])) {
