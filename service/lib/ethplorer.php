@@ -2421,7 +2421,7 @@ class Ethplorer {
      */
     protected function getChainyTransactions($limit = 10, $offset = FALSE){
         $result = array();
-        $search = array('to' => self::ADDRESS_CHAINY);
+        $search = array('to' => self::ADDRESS_CHAINY, 'status' => array('$ne' => '0x0'));
         if($this->filter){
             $search = array(
                 '$and' => array(
@@ -2491,7 +2491,7 @@ class Ethplorer {
      * @return int
      */
     public function countChainy($useFilter = TRUE){
-        $search = array('to' => self::ADDRESS_CHAINY);
+        $search = array('to' => self::ADDRESS_CHAINY, 'status' => array('$ne' => '0x0'));
         if($useFilter && $this->filter){
             $search = array(
                 '$and' => array(
