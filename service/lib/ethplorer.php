@@ -2459,7 +2459,8 @@ class Ethplorer {
         $result = array();
         $aMatch = array(
             "timestamp" => array('$gt' => time() - $period * 24 * 3600),
-            "to" => self::ADDRESS_CHAINY
+            "to" => self::ADDRESS_CHAINY,
+            'status' => array('$ne' => '0x0')
         );
         $dbData = $this->oMongo->aggregate(
             'transactions',
