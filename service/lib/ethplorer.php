@@ -1462,10 +1462,11 @@ class Ethplorer {
      */
     public function getLastTransfers(array $options = array(), $showEth = FALSE){
         $cache = 'get-last-transfers-' . md5(json_encode($options)) . '-' . ($showEth ? 'eth' : 'no-eth');
-        $result = $this->oCache->get($cache, false, true, 10);
+        $searchToken = (isset($options['address']) && !isset($options['history']));
+        $result = $this->oCache->get($cache, false, true, (($searchToken && !$showEth) ? 60 : 10));
         if(FALSE === $result){
             $search = array();
-            if(isset($options['address']) && !isset($options['history'])){
+            if($searchToken){
                 $search['contract'] = $options['address'];
             }
             if(isset($options['address']) && isset($options['history'])){
