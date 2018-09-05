@@ -1491,8 +1491,14 @@ class Ethplorer {
         $cursor = $this->oMongo->find('operations2', $search, $sort, $limit);
 
         $result = array();
+        $aTokens = array();
         foreach($cursor as $transfer){
-            $transfer['token'] = $this->getToken($transfer['contract'], true);
+            if(!$transfer['isEth']){
+                if(!isset($aTokens[$transfer['contract']])){
+                    $aTokens[$transfer['contract']] = $this->getToken($transfer['contract'], true);
+                }
+                $transfer['token'] = $aTokens[$transfer['contract']];
+            }
             unset($transfer["_id"]);
             $result[] = $transfer;
         }
