@@ -1461,40 +1461,45 @@ class Ethplorer {
      * @return array
      */
     public function getLastTransfers(array $options = array(), $showEth = FALSE){
-        $search = array();
-        if(isset($options['address']) && !isset($options['history'])){
-            $search['contract'] = $options['address'];
-        }
-        if(isset($options['address']) && isset($options['history'])){
-            $search['addresses'] = $options['address'];
-        }
-        if(isset($options['token']) && isset($options['history'])){
-            $search['contract'] = $options['token'];
-        }
-        if(!$showEth){
-            $search['isEth'] = false;
-        }
-        if(!isset($options['type'])){
-            $search['type'] = 'transfer';
-        }else{
-            if(FALSE !== $options['type']){
-                $search['type'] = $options['type'];
+        $cache = 'get-last-transfers-' . md5(json_encode($options)) . '-' . ($showEth ? 'eth' : 'no-eth');
+        $result = $this->oCache->get($cache, false, true, 10);
+        if(FALSE === $result){
+            $search = array();
+            if(isset($options['address']) && !isset($options['history'])){
+                $search['contract'] = $options['address'];
             }
-        }
-        $sort = array("timestamp" => -1);
+            if(isset($options['address']) && isset($options['history'])){
+                $search['addresses'] = $options['address'];
+            }
+            if(isset($options['token']) && isset($options['history'])){
+                $search['contract'] = $options['token'];
+            }
+            if(!$showEth){
+                $search['isEth'] = false;
+            }
+            if(!isset($options['type'])){
+                $search['type'] = 'transfer';
+            }else{
+                if(FALSE !== $options['type']){
+                    $search['type'] = $options['type'];
+                }
+            }
+            $sort = array("timestamp" => -1);
 
-        if(isset($options['timestamp']) && ($options['timestamp'] > 0)){
-            $search['timestamp'] = array('$lte' => $options['timestamp']);
-        }
+            if(isset($options['timestamp']) && ($options['timestamp'] > 0)){
+                $search['timestamp'] = array('$lte' => $options['timestamp']);
+            }
 
-        $limit = isset($options['limit']) ? (int)$options['limit'] : false;
-        $cursor = $this->oMongo->find('operations2', $search, $sort, $limit);
+            $limit = isset($options['limit']) ? (int)$options['limit'] : false;
+            $cursor = $this->oMongo->find('operations2', $search, $sort, $limit);
 
-        $result = array();
-        foreach($cursor as $transfer){
-            $transfer['token'] = $this->getToken($transfer['contract'], true);
-            unset($transfer["_id"]);
-            $result[] = $transfer;
+            $result = array();
+            foreach($cursor as $transfer){
+                $transfer['token'] = $this->getToken($transfer['contract'], true);
+                unset($transfer["_id"]);
+                $result[] = $transfer;
+            }
+            $this->oCache->save($cache, $result);
         }
         return $result;
     }
