@@ -1003,7 +1003,6 @@ class Ethplorer {
             }
             $this->_cliDebug("prevTokens count = " . count($aPrevTokens));
             $cursor = $this->oMongo->find('tokens', array(), array("transfersCount" => -1));
-            $cursor->timeout(-1);
             $aResult = array();
             foreach($cursor as $index => $aToken){
                 $address = $aToken["address"];
