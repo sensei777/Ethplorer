@@ -25,38 +25,22 @@ class ratesTest extends TestCase
             [[
                 'type' => 'compare',
                 'method' => 'getCurrencyHistory',
-                'description' => '= Comparing historical currencies with USD =',
+                'description' => '= Comparing historical currencies (THB, MMK, EUR, CNY, GBP, JPY, RUB, BTC) with USD =',
                 'compareFrom' => 'USD',
-                'compareTo' => ['THB', 'MMK', 'EUR', 'CNY', 'GBP', 'JPY', 'RUB'],
+                'compareTo' => ['THB', 'MMK', 'EUR', 'CNY', 'GBP', 'JPY', 'RUB', 'BTC'],
                 'compareType' => 'normal',
-                'compareSourceParam' => 'CURRFX',
                 'compareTime' => 'historic',
-                'callback' => function($database, $dataset){
-                    $apiKey = 'SS1Kj9CAzyj9bGssEQz9';
-                    $url = 'https://www.quandl.com/api/v1/datasets/'.$database.
-                        '/'.$dataset.'.json?auth_token='.$apiKey.'&trim_start=2015-04-01';
+                'callback' => function($currency){
+                    $apiKey = $this->getOxrApiKey();
+                    $randomDate = date("Y-m-d", mt_rand(1427846400, time() - (24 * 60 * 60)));
+                    $url = 'https://openexchangerates.org/api/historical/' . $randomDate . '.json?app_id=' . $apiKey;
                     $json = file_get_contents($url);
                     $result = json_decode($json, TRUE);
-                    return $result['data'];
-                }
-            ]],
-            [[
-                'type' => 'compare',
-                'method' => 'getCurrencyHistory',
-                'description' => '= Comparing historical BTC to USD =',
-                'compareFrom' => 'USD',
-                'compareTo' => ['BTC'],
-                'compareReplace' => 'MKPRU',
-                'compareType' => 'reverse',
-                'compareSourceParam' => 'BCHAIN',
-                'compareTime' => 'historic',
-                'callback' => function($database, $dataset){
-                    $apiKey = 'SS1Kj9CAzyj9bGssEQz9';
-                    $url = 'https://www.quandl.com/api/v1/datasets/'.$database.
-                        '/'.$dataset.'.json?auth_token='.$apiKey.'&trim_start=2015-04-01';
-                    $json = file_get_contents($url);
-                    $result = json_decode($json, TRUE);
-                    return $result['data'];
+                    $rate = 0;
+                    if(isset($result['rates']) && isset($result['rates'][$currency])){
+                        $rate = $result['rates'][$currency];
+                    }
+                    return array('currency' => $currency, 'date' => $randomDate, 'rate' => $rate);
                 }
             ]],
             [[
@@ -202,7 +186,7 @@ class ratesTest extends TestCase
                'compareType' => 'key',
                'compareTime' => 'current',
                'callback' => function(){
-                   $apiKey = '56373b75d3204d008efa8b62e0589743';
+                   $apiKey = $this->getOxrApiKey();
                    $url = 'https://openexchangerates.org/api/latest.json?app_id='.$apiKey;
                    $json = file_get_contents($url);
                    $result = json_decode($json, TRUE);
@@ -234,7 +218,7 @@ class ratesTest extends TestCase
                 'compareType' => 'key-reverse',
                 'compareTime' => 'current',
                 'callback' => function(){
-                    $apiKey = '56373b75d3204d008efa8b62e0589743';
+                    $apiKey = $this->getOxrApiKey();
                     $url = 'https://openexchangerates.org/api/latest.json?app_id='.$apiKey;
                     $json = file_get_contents($url);
                     $result = json_decode($json, TRUE);
@@ -242,6 +226,11 @@ class ratesTest extends TestCase
                 }
             ]]
         ];
+    }
+
+    protected function getOxrApiKey(){
+        global $argv;
+        return $argv[2];
     }
 
     private function getDataFromHtml($html)
@@ -269,7 +258,7 @@ class ratesTest extends TestCase
             $array_elem = array();
             foreach ($values as $innerkey => $val)
             {
-                if ($innerkey == 1){
+                if ($innerkey == 0){
                     $val = date('Y-m-d', strtotime($val));
                 } else {
                     $val = str_replace( ',', '', $val );
