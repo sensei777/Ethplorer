@@ -53,6 +53,10 @@ tr.paginationFooter td ul.pagination {
     font-weight: 300;
 }
 
+#ethplorer-note.warning {
+    background-color: rgba(255,0,0,1);
+}
+
 #ethplorer-note .ethplorer-note img {
     height: 35px;
     margin-top: -10px;
