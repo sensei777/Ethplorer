@@ -1003,45 +1003,52 @@ class Ethplorer {
             }
             $this->_cliDebug("prevTokens count = " . count($aPrevTokens));
             $cursor = $this->oMongo->find('tokens', array(), array("transfersCount" => -1));
-            $aResult = array();
-            foreach($cursor as $index => $aToken){
-                $address = $aToken["address"];
-                $this->_cliDebug("Token #" . $index . " / " . $address);
-                unset($aToken["_id"]);
-                $aResult[$address] = $aToken;
-                if(!isset($aPrevTokens[$address]) || ($aPrevTokens[$address]['transfersCount'] < $aToken['transfersCount'])){
-                    $this->_cliDebug($address . " was recently updated (transfers count = " . $aToken['transfersCount'] . ")");
-                    $aResult[$address]['issuancesCount'] = $this->getContractOperationCount(array('$in' => array('issuance', 'burn', 'mint')), $address, FALSE);
-                    $hc = $this->getTokenHoldersCount($address);;
-                    if(FALSE !== $hc){
-                        $aResult[$address]['holdersCount'] = $hc;
+            // Do not clear old data, just update records
+            if(!is_array($aResult)){
+                $aResult = array();
+            }
+            try {
+                foreach($cursor as $index => $aToken){
+                    $address = $aToken["address"];
+                    $this->_cliDebug("Token #" . $index . " / " . $address);
+                    unset($aToken["_id"]);
+                    $aResult[$address] = $aToken;
+                    if(!isset($aPrevTokens[$address]) || ($aPrevTokens[$address]['transfersCount'] < $aToken['transfersCount'])){
+                        $this->_cliDebug($address . " was recently updated (transfers count = " . $aToken['transfersCount'] . ")");
+                        $aResult[$address]['issuancesCount'] = $this->getContractOperationCount(array('$in' => array('issuance', 'burn', 'mint')), $address, FALSE);
+                        $hc = $this->getTokenHoldersCount($address);;
+                        if(FALSE !== $hc){
+                            $aResult[$address]['holdersCount'] = $hc;
+                        }
+                    }else if(!isset($aPrevTokens[$address]) || !isset($aPrevTokens[$address]['issuancesCount'])){
+                        $aResult[$address]['issuancesCount'] = $this->getContractOperationCount(array('$in' => array('issuance', 'burn', 'mint')), $address, FALSE);
+                    }else{
+                        $aResult[$address]['issuancesCount'] = isset($aPrevTokens[$address]['issuancesCount']) ? $aPrevTokens[$address]['issuancesCount'] : 0;
+                        $aResult[$address]['holdersCount'] = isset($aPrevTokens[$address]['holdersCount']) ? $aPrevTokens[$address]['holdersCount'] : 0;
                     }
-                }else if(!isset($aPrevTokens[$address]) || !isset($aPrevTokens[$address]['issuancesCount'])){
-                    $aResult[$address]['issuancesCount'] = $this->getContractOperationCount(array('$in' => array('issuance', 'burn', 'mint')), $address, FALSE);
-                }else{
-                    $aResult[$address]['issuancesCount'] = isset($aPrevTokens[$address]['issuancesCount']) ? $aPrevTokens[$address]['issuancesCount'] : 0;
-                    $aResult[$address]['holdersCount'] = isset($aPrevTokens[$address]['holdersCount']) ? $aPrevTokens[$address]['holdersCount'] : 0;
-                }
-                if(isset($this->aSettings['client']) && isset($this->aSettings['client']['tokens'])){
-                    $aClientTokens = $this->aSettings['client']['tokens'];
-                    if(isset($aClientTokens[$address])){
-                        $aResult[$address] = array_merge($aResult[$address], $aClientTokens[$address]);
+                    if(isset($this->aSettings['client']) && isset($this->aSettings['client']['tokens'])){
+                        $aClientTokens = $this->aSettings['client']['tokens'];
+                        if(isset($aClientTokens[$address])){
+                            $aResult[$address] = array_merge($aResult[$address], $aClientTokens[$address]);
+                        }
                     }
-                }
-                if(isset($aResult[$address]['name'])){
-                    $aResult[$address]['name'] = htmlspecialchars($aResult[$address]['name']);
-                }
-                if(isset($aResult[$address]['symbol'])){
-                    $aResult[$address]['symbol'] = htmlspecialchars($aResult[$address]['symbol']);
-                }
+                    if(isset($aResult[$address]['name'])){
+                        $aResult[$address]['name'] = htmlspecialchars($aResult[$address]['name']);
+                    }
+                    if(isset($aResult[$address]['symbol'])){
+                        $aResult[$address]['symbol'] = htmlspecialchars($aResult[$address]['symbol']);
+                    }
 
-                $cursor2 = $this->oMongo->find('addressCache', array("address" => $address));
-                $aCachedData = false;
-                foreach($cursor2 as $aCachedData) break;
-                if(false !== $aCachedData){
-                    $aResult[$address]['txsCount'] = $aCachedData['txsCount'];
-                    if(isset($aCachedData['ethTransfersCount'])) $aResult[$address]['ethTransfersCount'] = $aCachedData['ethTransfersCount'];
+                    $cursor2 = $this->oMongo->find('addressCache', array("address" => $address));
+                    $aCachedData = false;
+                    foreach($cursor2 as $aCachedData) break;
+                    if(false !== $aCachedData){
+                        $aResult[$address]['txsCount'] = $aCachedData['txsCount'];
+                        if(isset($aCachedData['ethTransfersCount'])) $aResult[$address]['ethTransfersCount'] = $aCachedData['ethTransfersCount'];
+                    }
                 }
+            }catch(\Exception $e){
+                $this->_cliDebug("Exception: " . $e->getMessage());
             }
             if(isset($aResult[self::ADDRESS_ETH])){
                 unset($aResult[self::ADDRESS_ETH]);
