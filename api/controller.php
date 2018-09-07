@@ -63,9 +63,9 @@ class ethplorerController {
             'code' => 114,
             'message' => 'Pool not found'
         ],
-        'ADDRESS_IS_CONTRACT' => [
+        'ADDRESS_IS_TOKEN' => [
             'code' => 115,
-            'message' => 'You can not use contract addresses'
+            'message' => 'You can not use token addresses'
         ],
         'OVER_LIMIT' => [
             'code' => 116,
@@ -168,7 +168,7 @@ class ethplorerController {
             if($this->db->isSuspendedAPIKey($key)){
                 $this->sendError(133, 'API key temporary suspended. Contact support.', 403);
             }
-            
+
             if($isMethodPOST){
                 // @todo: Temporary solution, special key property will be used later
                 if($key == "freekey"){
