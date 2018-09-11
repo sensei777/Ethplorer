@@ -2744,10 +2744,9 @@ class Ethplorer {
                     if(!$curDate || ($curDate != $aPriceHistory[$i]['date'])){
                         $aDailyRecord = $aPriceHistory[$i];
                         $firstRecord = true;
-                    }else{
-                        if(($i == (count($aPriceHistory) - 1)) || ($aPriceHistory[$i]['date'] != $aPriceHistory[$i + 1]['date'])){
-                            $lastRecord = true;
-                        }
+                    }
+                    if(($i == (count($aPriceHistory) - 1)) || ($aPriceHistory[$i]['date'] != $aPriceHistory[$i + 1]['date'])){
+                        $lastRecord = true;
                         if($lastRecord){
                             $aDailyRecord['close'] = $aPriceHistory[$i]['close'];
                         }
