@@ -2770,7 +2770,10 @@ class Ethplorer {
                         if($prevVolC && (($aDailyRecord['volumeConverted'] / $prevVolC) > 1000000)){
                             $aDailyRecord['volumeConverted'] = $prevVolC;
                         }
-                        $aDailyRecord['average'] = $aDailyRecord['volume'] ? ($aDailyRecord['volumeConverted'] / $aDailyRecord['volume']) : 0;
+                        if($aDailyRecord['volume'] && $aDailyRecord['volumeConverted']){
+                            $aDailyRecord['average'] = $aDailyRecord['volumeConverted'] / $aDailyRecord['volume'];
+                        }
+                        if(!isset($aDailyRecord['average'])) $aDailyRecord['average'] = 0;
                         $aPriceHistoryDaily[] = $aDailyRecord;
                         $prevVol = $aDailyRecord['volume'];
                         $prevVolC = $aDailyRecord['volumeConverted'];                        
