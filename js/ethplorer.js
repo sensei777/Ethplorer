@@ -1010,8 +1010,8 @@ Ethplorer = {
             if(oToken.price && oToken.price.rate){
                 var pf = parseFloat(totalSupply.replace(/\,/g,'').split(' ')[0]);
                 if(pf){
-                    pf = Ethplorer.Utils.round(pf * oToken.price.rate, oToken.price.rate < 0.1 ? 4 : 2);
-                    totalSupply = totalSupply + '<br><span class="total-supply-usd">$&nbsp;' + Ethplorer.Utils.formatNum(pf, true, oToken.price.rate < 0.1 ? 4 : 2, true) + '</span>';
+                    pf = Ethplorer.Utils.round(pf * oToken.price.rate, 2);
+                    totalSupply = totalSupply + '<br><span class="total-supply-usd">$&nbsp;' + Ethplorer.Utils.formatNum(pf, true, 2, true) + '</span>';
                     $('#address-token-totalSupply').html(totalSupply);
                 }
             }
@@ -1865,7 +1865,7 @@ Ethplorer = {
                 if(value && value.rate){
                     var rate = value;
                     var hint = 'Updated at ' + Ethplorer.Utils.ts2date(rate.ts, true);
-                    var price = rate.rate < 0.01 ? rate.rate : Ethplorer.Utils.formatNum(rate.rate, true, 2, true);
+                    var price = rate.rate < 0.01 ? rate.rate : Ethplorer.Utils.formatNum(rate.rate, true, rate.rate < 0.1 ? 4 : 2, true);
 
                     value = '<span title="' + hint + '">$&nbsp;' + price + '</span><br>';
 
