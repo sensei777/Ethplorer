@@ -1010,8 +1010,8 @@ Ethplorer = {
             if(oToken.price && oToken.price.rate){
                 var pf = parseFloat(totalSupply.replace(/\,/g,'').split(' ')[0]);
                 if(pf){
-                    pf = Ethplorer.Utils.round(pf * oToken.price.rate, 2);
-                    totalSupply = totalSupply + '<br><span class="total-supply-usd">$&nbsp;' + Ethplorer.Utils.formatNum(pf, true, 2, true) + '</span>';
+                    pf = Ethplorer.Utils.round(pf * oToken.price.rate, oToken.price.rate < 0.1 ? 4 : 2);
+                    totalSupply = totalSupply + '<br><span class="total-supply-usd">$&nbsp;' + Ethplorer.Utils.formatNum(pf, true, oToken.price.rate < 0.1 ? 4 : 2, true) + '</span>';
                     $('#address-token-totalSupply').html(totalSupply);
                 }
             }
