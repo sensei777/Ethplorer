@@ -253,7 +253,7 @@ ethplorerWidget = {
     // Use local path for develop instances
     fixPath: function(){
         if((document.location.host !== 'ethplorer.io') && (document.location.host.indexOf('ethplorer') >= 0)){
-            ethplorerWidget.api = '//' + document.location.host + '/api';
+            //ethplorerWidget.api = '//' + document.location.host + '/api';
             ethplorerWidget.url = '//' + document.location.host;
         }
     },
@@ -1615,7 +1615,7 @@ ethplorerWidget.Type['tokenPriceHistoryGrouped'] = function(element, options, te
         }
     };
 
-    this.getTooltip = function(noPrice, date, low, open, close, high, operations, volume, convertedVolume, rate, diff){
+    this.getTooltip = function(noPrice, date, low, open, close, high, operations, volume, convertedVolume, rate, diff, onlyPrice){
         var tooltipDateFormatter = new google.visualization.DateFormat({ 
             pattern: "MMM dd, yyyy '+UTC'"
         });
@@ -1635,10 +1635,20 @@ ethplorerWidget.Type['tokenPriceHistoryGrouped'] = function(element, options, te
         }else{
             if(volume > 0) var avg = convertedVolume / volume;
             else var avg = (open + close) / 2;
+
+            if(onlyPrice && !diff){
+                diff = ethplorerWidget.Utils.pdiff(close, open, true);
+                if('x' === diff){
+                    diff = 0;
+                }else{
+                    var numDec = Math.abs(diff) > 99 ? 0 : 2;
+                    var diff = ethplorerWidget.Utils.formatNum(diff, true, numDec, false, true);
+                }
+            }
             var diffHtml = ' <span style="color:' + (diff >= 0 ? '#1E8C1E' : '#AE2525') + ';">(' + diff + '%)</span>';
 
             if(rate && rate > 0){
-                tooltip += '<span class="tooltipRow"><b>Price:</b> ' + avgFormatter.formatValue(rate) + ' USD' + diffHtml + '</span><br/>';
+                tooltip += '<span class="tooltipRow"><b>Price:</b> ' + (onlyPrice ? currencyFormatter.formatValue(rate) : avgFormatter.formatValue(rate)) + ' USD' + diffHtml + '</span><br/>';
             }else{
                 diffHtml = '';
                 var diff = ethplorerWidget.Utils.pdiff(close, open, true);
@@ -1653,16 +1663,17 @@ ethplorerWidget.Type['tokenPriceHistoryGrouped'] = function(element, options, te
                 '<span class="tooltipRow"><b>Open:</b> ' + currencyFormatter.formatValue(open) + ' <b>Close:</b> ' + currencyFormatter.formatValue(close) + diffHtml +'</span><br/>' +
                 '<span class="tooltipRow"><b>High:</b> ' + currencyFormatter.formatValue(high) + ' <b>Low:</b> ' + currencyFormatter.formatValue(low) + '</span><br/>';
             }
-            tooltip += '<span class="tooltipRow"><b class="tooltipRowOps">Token operations:</b> ' + numFormatter.formatValue(operations) + '</span><br/>' +
-                '<span class="tooltipRow"><b class="tooltipRowVol">Volume:</b> ' + numFormatter.formatValue(volume.toFixed(0)) + ' (' + numFormatter.formatValue(convertedVolume.toFixed(2)) + ' USD)</span>';
+            tooltip += '<span class="tooltipRow"><b class="tooltipRowOps">Token operations:</b> ' + numFormatter.formatValue(operations) + '</span>' +
+                (onlyPrice ? '' : ('<br/><span class="tooltipRow"><b class="tooltipRowVol">Volume:</b> ' + numFormatter.formatValue(volume.toFixed(0)) + ' (' + numFormatter.formatValue(convertedVolume.toFixed(2)) + ' USD)</span>'));
         }
         tooltip += '</div>';
         return tooltip;
     }
 
     this.drawChart = function(aTxData, widgetPriceData, currentPrice){
+        onlyPrice = false;
+        if('undefined' !== typeof(currentPrice) && 'undefined' !== typeof(currentPrice.onlyPrice)) onlyPrice = currentPrice.onlyPrice;
         var aData = [];
-
         if(aTxData.length){
             if(widgetPriceData && widgetPriceData.length){
                 if(currentPrice){
@@ -1674,7 +1685,8 @@ ethplorerWidget.Type['tokenPriceHistoryGrouped'] = function(element, options, te
                     var prevDatePriceKey = prevDate.getFullYear() + '-' + (prevDate.getMonth() < 9 ? '0' : '') + (prevDate.getMonth() + 1) + '-' + (prevDate.getDate() < 10 ? '0' : '') + prevDate.getDate();
 
                     if(widgetPriceData[widgetPriceData.length - 1].date != currentDatePriceKey && widgetPriceData[widgetPriceData.length - 1].date == prevDatePriceKey){
-                        if(currentPrice.rate && (currentPrice.rate > 0) && currentPrice.volume24h && currentPrice.ts){
+                        if(!currentPrice.volume24h) currentPrice.volume24h = 0;
+                        if(currentPrice.rate && (currentPrice.rate > 0) && (currentPrice.volume24h || onlyPrice) && currentPrice.ts){
                             var diff = ethplorerWidget.Utils.pdiff(currentPrice.rate, widgetPriceData[widgetPriceData.length - 1].close, true);
                             if('x' === diff){
                                 var diff = 0;
@@ -1808,7 +1820,7 @@ ethplorerWidget.Type['tokenPriceHistoryGrouped'] = function(element, options, te
             if(chartDay < 10) chartDay = '0' + chartDay;
             var strChartDate = d.getFullYear() + '-' + chartMonth + '-' + chartDay + 'T00:00:00Z';
 
-            var tooltip = this.getTooltip(noPrice, new Date(strChartDate), low, open, close, high, cnt, volume, volumeConverted, rate, diff);
+            var tooltip = this.getTooltip(noPrice, new Date(strChartDate), low, open, close, high, cnt, volume, volumeConverted, rate, diff, onlyPrice);
             if(noPrice){
                 aData.push([new Date(strChartDate), cnt, 'opacity: 0.5', tooltip]);
             }else{
