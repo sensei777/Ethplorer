@@ -1671,8 +1671,10 @@ ethplorerWidget.Type['tokenPriceHistoryGrouped'] = function(element, options, te
     }
 
     this.drawChart = function(aTxData, widgetPriceData, currentPrice){
-        onlyPrice = false;
+        var onlyPrice = false,
+            defaultPriceFormat = '$ #,##0.00##';
         if('undefined' !== typeof(currentPrice) && 'undefined' !== typeof(currentPrice.onlyPrice)) onlyPrice = currentPrice.onlyPrice;
+
         var aData = [];
         if(aTxData.length){
             if(widgetPriceData && widgetPriceData.length){
@@ -1708,6 +1710,7 @@ ethplorerWidget.Type['tokenPriceHistoryGrouped'] = function(element, options, te
                                 volume: currentPrice.volume24h / currentPrice.rate,
                                 diff: pdiff
                             });
+                            if(currentPrice.rate < 0.1) defaultPriceFormat = '$ #,##0.0000';
                         }
                     }
                 }
@@ -1882,7 +1885,7 @@ ethplorerWidget.Type['tokenPriceHistoryGrouped'] = function(element, options, te
         var vAxes = {
             1: {
                 title: 'Price',
-                format: '$ #,##0.00##'
+                format: defaultPriceFormat
                 //format: 'currency'
             },
             0: {
