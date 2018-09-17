@@ -1170,6 +1170,29 @@ class Ethplorer {
     }
 
     /**
+     * Get data from token cache and sores it as a single record
+     *
+     * @param string $address
+     * @return array
+     */
+    protected function getTokenByAddress($address){
+        $result = false;
+        if($address){
+            $cache = 'tokend-' . $address;
+            $result = $this->oCache->get($cache, false, true, 600);
+            if(false === $result){
+                $aTokens = $this->getTokens();
+                $result = isset($aTokens[$address]) ? $aTokens[$address] : "notfound";
+                if(is_array($result) && isset($result["_id"])){
+                    unset($result["_id"]);
+                }
+                $this->oCache->save($cache, $result);
+            }
+        }
+        return is_array($result) && !empty($result) ? $result : false;
+    }
+
+    /**
      * Returns token data by contract address.
      *
      * @param string  $address  Token contract address
@@ -1178,26 +1201,12 @@ class Ethplorer {
     public function getToken($address, $fast = FALSE){
         // evxProfiler::checkpoint('getToken', 'START', 'address=' . $address);
         $cache = 'token-' . $address;
-        $tokenDetailsCache = 'tokend-' . $address;
         if($fast){
-            $result = $this->oCache->get($tokenDetailsCache, false, true, 600);
-            if(false === $result){           
-                $aTokens = $this->getTokens();
-                $result = isset($aTokens[$address]) ? $aTokens[$address] : [];
-                unset($result["_id"]);
-                $this->oCache->save($tokenDetailsCache, $result);
-            }
+            $result = $this->getTokenByAddress($address);
         }else{
             $result = $this->oCache->get($cache, false, true, 30);
             if(false === $result){
-                $result = $this->oCache->get($tokenDetailsCache, false, true, 600);
-                if(false === $result){
-                    $aTokens = $this->getTokens();
-                    $result = isset($aTokens[$address]) ? $aTokens[$address] : [];
-                    unset($result["_id"]);                    
-                    $this->oCache->save($tokenDetailsCache, $result);
-                }
-                if(empty($result)) $result = false;
+                $result = $this->getTokenByAddress($address);
                 if(is_array($result)){
                     $result += array('txsCount' => 0, 'transfersCount' => 0, 'ethTransfersCount' => 0, 'issuancesCount' => 0, 'holdersCount' => 0, "symbol" => "");
                     if(!isset($result['decimals']) || !intval($result['decimals'])){
@@ -1239,7 +1248,6 @@ class Ethplorer {
                 }
             }
         }
-        if(empty($result)) $result = false;        
         if(is_array($result)){
             unset($result["_id"]);
             $price = $this->getTokenPrice($address);
