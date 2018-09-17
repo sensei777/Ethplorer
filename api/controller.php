@@ -137,6 +137,7 @@ class ethplorerController {
         }
         http_response_code($statusCode);
         echo json_encode($result, JSON_UNESCAPED_SLASHES);
+        gc_collect_cycles();
         die();
     }
 
