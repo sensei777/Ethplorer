@@ -23,6 +23,10 @@ require dirname(__FILE__) . '/../service/lib/ethplorer.php';
 require dirname(__FILE__) . '/controller.php';
 
 try {
+    $aConfig = require_once dirname(__FILE__) . '/../service/config.php';
+    if($debugId = filter_input(INPUT_GET, 'debugId')){
+        $aConfig['debugId'] = $debugId;
+    }
     $es = Ethplorer::db(require_once dirname(__FILE__) . '/../service/config.php');
 }catch(Exception $e){
     // MongoDB connection error
