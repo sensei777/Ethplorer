@@ -137,6 +137,10 @@ class Ethplorer {
     protected $useOperations2 = FALSE;
 
     protected $getTokensCacheCreation = FALSE;
+    
+    protected $debug = false;
+    
+    protected $memUsage = [];
 
     /**
      * Constructor.
@@ -183,14 +187,18 @@ class Ethplorer {
             evxMongoPools::init($this->aSettings['bundles']);
             $this->oMongoPools = evxMongoPools::getInstance();
         }
+
+        if(isset($this->aSettings['debugId']) && $this->aSettings['debugId']){
+            $this->debug = $this->aSettings['debugId'];
+        }
     }
 
     public function __destruct(){
         // Todo: profiler config
         evxProfiler::checkpoint('Ethplorer', 'FINISH');
         $total = evxProfiler::getTotalTime();
-        if(isset($this->aSettings['debugId']) && $this->aSettings['debugId']){
-            evxProfiler::log($this->aSettings['logsDir'] . 'profiler-' . /* time() . '-' . */ md5($this->aSettings['debugId']) . '.log');
+        if($this->debug){
+            evxProfiler::log($this->aSettings['logsDir'] . 'profiler-' . /* time() . '-' . */ md5($this->debug) . '.log');
         }
         $slowQueryTime = isset($this->aSettings['slowQueryTime']) ? (int)$this->aSettings['slowQueryTime'] : 10;
         if(($total > $slowQueryTime) && (php_sapi_name() !== 'cli')){
@@ -226,6 +234,16 @@ class Ethplorer {
         return $this->oMongo;
     }
 
+    public function storeMemoryUsage($label = false){
+        if(!$label){
+            $label = microtime();
+        }
+        $this->memUsage[$label] = [
+            'php' => memory_get_usage(),
+            'real' => memory_get_usage(TRUE)
+        ];
+    }       
+
     /**
      * Returns some debug data
      *
@@ -235,7 +253,8 @@ class Ethplorer {
         return array(
             'totalTime' => evxProfiler::getTotalTime(),
             'dbConnected' => $this->oMongo->dbConnected(),
-            'queries' => $this->oMongo->getQueryProfileData()
+            'queries' => $this->oMongo->getQueryProfileData(),
+            'memUsage' => $this->memUsage
         );
     }
     
