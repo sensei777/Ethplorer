@@ -27,7 +27,7 @@ try {
     if($debugId = filter_input(INPUT_GET, 'debugId')){
         $aConfig['debugId'] = $debugId;
     }
-    $es = Ethplorer::db(require_once dirname(__FILE__) . '/../service/config.php');
+    $es = Ethplorer::db($aConfig);
 }catch(Exception $e){
     // MongoDB connection error
     $es = FALSE;
