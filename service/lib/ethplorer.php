@@ -1175,18 +1175,23 @@ class Ethplorer {
      * @param string $address
      * @return array
      */
-    protected function getTokenByAddress($address){
+    protected function getTokenByAddress($address, $noCache = false){
         $result = false;
         if($address){
-            $cache = 'tokend-' . $address;
-            $result = $this->oCache->get($cache, false, true, 600);
-            if(false === $result){
+            if($noCache){
                 $aTokens = $this->getTokens();
-                $result = isset($aTokens[$address]) ? $aTokens[$address] : "notfound";
-                if(is_array($result) && isset($result["_id"])){
-                    unset($result["_id"]);
+                $result = isset($aTokens[$address]) ? $aTokens[$address] : false;
+            }else{
+                $cache = 'tokend-' . $address;
+                $result = $this->oCache->get($cache, false, true, 600);
+                if(false === $result){
+                    $aTokens = $this->getTokens();
+                    $result = isset($aTokens[$address]) ? $aTokens[$address] : "notfound";
+                    if(is_array($result) && isset($result["_id"])){
+                        unset($result["_id"]);
+                    }
+                    $this->oCache->save($cache, $result);
                 }
-                $this->oCache->save($cache, $result);
             }
         }
         return is_array($result) && !empty($result) ? $result : false;
@@ -1202,7 +1207,7 @@ class Ethplorer {
         // evxProfiler::checkpoint('getToken', 'START', 'address=' . $address);
         $cache = 'token-' . $address;
         if($fast){
-            $result = $this->getTokenByAddress($address);
+            $result = $this->getTokenByAddress($address, true);
         }else{
             $result = $this->oCache->get($cache, false, true, 30);
             if(false === $result){
