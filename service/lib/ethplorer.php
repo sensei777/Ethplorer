@@ -235,13 +235,16 @@ class Ethplorer {
     }
 
     public function storeMemoryUsage($label = false){
-        if(!$label){
-            $label = microtime();
+        if($this->debug){
+            if(!$label){
+                $label = microtime();
+            }
+            $mb = 1024 * 1024;
+            $this->memUsage[$label] = [
+                'php' => round(memory_get_usage() / $mb, 2),
+                'real' => round(memory_get_usage(TRUE) / $mb, 2)
+            ];
         }
-        $this->memUsage[$label] = [
-            'php' => memory_get_usage(),
-            'real' => memory_get_usage(TRUE)
-        ];
     }       
 
     /**
