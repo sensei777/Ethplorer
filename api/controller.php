@@ -109,7 +109,8 @@ class ethplorerController {
             file_put_contents($logsDir . '/widget-request.log', "[$date] Widget: {$this->command}, source: {$source}\n", FILE_APPEND);
         }
         $memUsage = round(memory_get_usage(TRUE) / (1024 * 1024), 2);
-        $logStr = "[$date] Call: {$this->command}, Key: {$key} URI: {$_SERVER["REQUEST_URI"]}, IP: {$_SERVER['REMOTE_ADDR']}, {$ms} s. Mem: {$memUsage} MB. {$this->cacheState}\n";
+        $peakMemUsage = round(memory_get_peak_usage(TRUE) / (1024 * 1024), 2);
+        $logStr = "[$date] Call: {$this->command}, Key: {$key} URI: {$_SERVER["REQUEST_URI"]}, IP: {$_SERVER['REMOTE_ADDR']}, {$ms} s. Mem: {$memUsage} MB. Peak: {$peakMemUsage} MB. {$this->cacheState}\n";
         file_put_contents($logsDir . '/api-request.log', $logStr, FILE_APPEND);
     }
 
