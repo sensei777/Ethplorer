@@ -29,7 +29,7 @@ if($showTx) $es->setShowTx($showTx);
 
 if($hash){
     if((false !== $data) && $es->isValidAddress($data)){
-        $md5 = md5('/service/csv.php?data=' . $data . date("Y-n-j"));
+        $md5 = md5('/service/exportcsv.php?data=' . $data . date("Y-n-j"));
         if($md5 == $hash){
             $result = $es->getAddressOperationsCSV($data);
             header('Content-Description: File Transfer');
