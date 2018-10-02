@@ -393,13 +393,13 @@ eWgs.push(function () {
             '#token-history-grouped-2', // Placeholder element
             'tokenHistoryGrouped', // Widget type
             {
-                'period': 10,
+                'period': 90,
                 'type': 'column', // supported types: area, column, line
                 options: {
                     'title': 'Ethereum Tokens Pulse',
                     'pointSize': 2,
                     'hAxis': {
-                        'title': '10 days token operations chart',
+                        'title': '90 days token operations chart',
                         'titleTextStyle': {
                             'color': '#3366CC',
                             'italic': true
@@ -444,6 +444,7 @@ eWgs.push(function () {
             '#token-history-grouped-3', // Placeholder element
             'tokenHistoryGrouped', // Widget type
             {
+                'period': 90,
                 'theme': 'dark',
                 options: {
 
