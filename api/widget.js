@@ -1363,6 +1363,9 @@ ethplorerWidget.Type['tokenHistoryGrouped'] = function(element, options, templat
                 gridlines: {
                     count: ethplorerWidget.getGoogleChartAxisCount(aData.length),
                     color: "none"
+                },
+                minorGridlines: {
+                    count: 0
                 }
             },
             vAxis: {
@@ -1376,6 +1379,9 @@ ethplorerWidget.Type['tokenHistoryGrouped'] = function(element, options, templat
                 },
                 gridlines: {
                     color: "none"
+                },
+                minorGridlines: {
+                    count: 0
                 },
                 maxValue: 3,
                 format: '#,###',
@@ -1939,6 +1945,9 @@ ethplorerWidget.Type['tokenPriceHistoryGrouped'] = function(element, options, te
                         count: ethplorerWidget.getGoogleChartAxisCount(aData.length),
                         color: "none"
                     },
+                    minorGridlines: {
+                        count: 0
+                    }
                 },
                 vAxis: {
                     viewWindowMode: 'maximized',
@@ -1948,6 +1957,9 @@ ethplorerWidget.Type['tokenPriceHistoryGrouped'] = function(element, options, te
                     },
                     gridlines: {
                         color: "none"
+                    },
+                    minorGridlines: {
+                        count: 0
                     },
                     //format: '#,###',
                     /*minValue: 0,
@@ -2407,6 +2419,9 @@ ethplorerWidget.Type['addressPriceHistoryGrouped'] = function(element, options, 
                         count: ethplorerWidget.getGoogleChartAxisCount(aData.length),
                         color: "none"
                     },
+                    minorGridlines: {
+                        count: 0
+                    }
                 },
                 vAxis: {
                     viewWindowMode: 'maximized',
@@ -2421,6 +2436,9 @@ ethplorerWidget.Type['addressPriceHistoryGrouped'] = function(element, options, 
                     gridlines: {
                         color: "none"
                     },
+                    minorGridlines: {
+                        count: 0
+                    }
                 },
                 vAxes: vAxes,
                 pointSize: 3,
