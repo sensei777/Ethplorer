@@ -774,7 +774,16 @@ class apiTest extends TestCase
 
     protected function getAPIKey()
     {
-        global $argv;
-        return !empty($argv[2]) ? $argv[2] : apiTest::APIKey;
+        global $argc, $argv;
+        $apiKey = apiTest::APIKey;
+        if($argc){
+            foreach($argv as $i => $arg){
+                if(0 === strpos($arg, 'APIKEY=')){
+                    $apiKey = str_replace('APIKEY=', '', $arg);
+                    break;
+                }
+            }
+        }
+        return $apiKey;
     }
 }
