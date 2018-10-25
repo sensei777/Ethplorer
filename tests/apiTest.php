@@ -7,7 +7,7 @@ use EverexIO\PHPUnitIterator\TestCase;
 class apiTest extends TestCase
 {
     protected $url = 'https://api.ethplorer.io/';
-    const APIKey = 'freekey';
+    const FreeKey = 'freekey';
    
     /**
      * @dataProvider provider
@@ -166,8 +166,9 @@ class apiTest extends TestCase
             [[
                 'method' => 'getTokenHistory',
                 'description' => 'Check with incorrect limit value',
+                'sleep' => 5,
                 'URL_params' => '0xd26114cd6EE289AccF82350c8d8487fedB8A0C07',
-                'GET_params' =>  ['apiKey' => $this->getAPIKey(), 'limit' => 'incorrect'],
+                'GET_params' =>  ['apiKey' => $this->getFreeKey(), 'limit' => 'incorrect'],
                 'asserts' => [
                     ['type' => 'isset',    'fields' => ['operations']],
                     ['type' => '!empty',   'fields' => ['operations']],
@@ -179,8 +180,9 @@ class apiTest extends TestCase
             [[
                 'method' => 'getTokenHistory',
                 'description' => 'Check with limit = 0',
+                'sleep' => 5,
                 'URL_params' => '0xd26114cd6EE289AccF82350c8d8487fedB8A0C07',
-                'GET_params' =>  ['apiKey' => $this->getAPIKey(), 'limit' => 0],
+                'GET_params' =>  ['apiKey' => $this->getFreeKey(), 'limit' => 0],
                 'asserts' => [
                     ['type' => 'isset',    'fields' => ['operations']],
                     ['type' => '!empty',   'fields' => ['operations']],
@@ -192,8 +194,9 @@ class apiTest extends TestCase
             [[
                 'method' => 'getTokenHistory',
                 'description' => 'Check with limit = 51',
+                'sleep' => 5,
                 'URL_params' => '0xd26114cd6EE289AccF82350c8d8487fedB8A0C07',
-                'GET_params' =>  ['apiKey' => $this->getAPIKey(), 'limit' => 51],
+                'GET_params' =>  ['apiKey' => $this->getFreeKey(), 'limit' => 51],
                 'asserts' => [
                     ['type' => 'isset',    'fields' => ['operations']],
                     ['type' => '!empty',   'fields' => ['operations']],
@@ -284,8 +287,9 @@ class apiTest extends TestCase
             [[
                 'method' => 'getAddressHistory',
                 'description' => 'Check with incorrect limit value',
+                'sleep' => 5,
                 'URL_params' => '0xd26114cd6EE289AccF82350c8d8487fedB8A0C07',
-                'GET_params' =>  ['apiKey' => $this->getAPIKey(), 'limit' => 'incorrect'],
+                'GET_params' =>  ['apiKey' => $this->getFreeKey(), 'limit' => 'incorrect'],
                 'asserts' => [
                     ['type' => 'isset',    'fields' => ['operations']],
                     ['type' => '!empty',   'fields' => ['operations']],
@@ -297,8 +301,9 @@ class apiTest extends TestCase
             [[
                 'method' => 'getAddressHistory',
                 'description' => 'Check with limit = 0',
+                'sleep' => 5,
                 'URL_params' => '0xd26114cd6EE289AccF82350c8d8487fedB8A0C07',
-                'GET_params' =>  ['apiKey' => $this->getAPIKey(), 'limit' => 0],
+                'GET_params' =>  ['apiKey' => $this->getFreeKey(), 'limit' => 0],
                 'asserts' => [
                     ['type' => 'isset',    'fields' => ['operations']],
                     ['type' => '!empty',   'fields' => ['operations']],
@@ -310,8 +315,9 @@ class apiTest extends TestCase
             [[
                 'method' => 'getAddressHistory',
                 'description' => 'Check with limit = 51',
+                'sleep' => 5,
                 'URL_params' => '0xd26114cd6EE289AccF82350c8d8487fedB8A0C07',
-                'GET_params' =>  ['apiKey' => $this->getAPIKey(), 'limit' => 51],
+                'GET_params' =>  ['apiKey' => $this->getFreeKey(), 'limit' => 51],
                 'asserts' => [
                     ['type' => 'isset',    'fields' => ['operations']],
                     ['type' => '!empty',   'fields' => ['operations']],
@@ -383,8 +389,9 @@ class apiTest extends TestCase
             [[
                 'method' => 'getAddressTransactions',
                 'description' => '= check if limit=0 return correct amount of objects =',
+                'sleep' => 5,
                 'URL_params' => '0xb297cacf0f91c86dd9d2fb47c6d12783121ab780',
-                'GET_params' =>  ['apiKey' => $this->getAPIKey(), 'showZeroValues'=>'true'],
+                'GET_params' =>  ['apiKey' => $this->getFreeKey(), 'showZeroValues'=>'true'],
                 'asserts' => [
                     ['type' => 'isset', 'array' => 'true', 'fields' => ['timestamp', 'from', 'to', 'hash', 'value', 'input', 'success']],
                     ['type' => '!isset',  'fields' => ['error']],
@@ -480,8 +487,9 @@ class apiTest extends TestCase
             [[
                 'method' => 'getTopTokens',
                 'description' => '= request with "limit" parameter equals 0 =',
+                'sleep' => 5,
                 'URL_params' => '',
-                'GET_params' =>  ['apiKey' => $this->getAPIKey(), 'limit'=>'5'],
+                'GET_params' =>  ['apiKey' => $this->getFreeKey(), 'limit'=>'0'],
                 'asserts' => [
                     ['type' => 'isset',    'fields' => ['tokens']],
                     ['type' => '!empty',   'fields' => ['tokens']],
@@ -493,8 +501,9 @@ class apiTest extends TestCase
             [[
                 'method' => 'getTopTokens',
                 'description' => '= request with "limit" parameter equals 51 =',
+                'sleep' => 5,
                 'URL_params' => '',
-                'GET_params' =>  ['apiKey' => $this->getAPIKey(), 'limit'=>'51'],
+                'GET_params' =>  ['apiKey' => $this->getFreeKey(), 'limit'=>'51'],
                 'asserts' => [
                     ['type' => 'isset',    'fields' => ['tokens']],
                     ['type' => '!empty',   'fields' => ['tokens']],
@@ -772,10 +781,14 @@ class apiTest extends TestCase
         return $default;
     }
 
+    protected function getFreeKey(){
+        return apiTest::FreeKey;
+    }
+
     protected function getAPIKey()
     {
         global $argc, $argv;
-        $apiKey = apiTest::APIKey;
+        $apiKey = $this->getFreeKey();
         if($argc){
             foreach($argv as $i => $arg){
                 if(0 === strpos($arg, 'APIKEY=')){
