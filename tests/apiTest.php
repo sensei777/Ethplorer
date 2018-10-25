@@ -461,7 +461,7 @@ class apiTest extends TestCase
                 'method' => 'getTopTokens',
                 'description' => '= request with "period" parameter =',
                 'URL_params' => '',
-                'GET_params' =>  ['apiKey' => $this->getAPIKey(), 'period'=>'5'],
+                'GET_params' =>  ['apiKey' => $this->getAPIKey(), 'period'=>'10'],
                 'asserts' => [
                     ['type' => 'isset',    'fields' => ['tokens']],
                     ['type' => '!empty',   'fields' => ['tokens']],
