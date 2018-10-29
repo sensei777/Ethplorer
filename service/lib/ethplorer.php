@@ -3322,7 +3322,7 @@ class Ethplorer {
         }
         return $this->_jsonrpcall($this->aSettings['ethereum'], $method, $params);
     }
-
+    
     protected function _jsonrpcall($service, $method, $params = array()){
         $data = array(
             'jsonrpc' => "2.0",
@@ -3330,13 +3330,12 @@ class Ethplorer {
             'method'  => $method,
             'params'  => $params
         );
+        $logFile = 'jsonrpc-request';
+        $log = ($method !== 'eth_getBalance') && true;
+        $id = uniqid();
         $result = false;
         $json = json_encode($data);
-        if(filter_input(INPUT_GET, "debugRPC")){
-            echo "Request: " . var_export($json, true) . "\n";
-        }
-        $id = uniqid();
-        @file_put_contents(__DIR__ . '/../log/jsonrpc-request.log', '[' . date('Y-m-d H:i:s') . "] Request {$id}: " . var_export($json, true) . "\n", FILE_APPEND);
+        $this->log($logFile, "Request {$id}: " . var_export($json, true), $log);
         $ch = curl_init($service);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_HTTPHEADER, array(
@@ -3348,11 +3347,7 @@ class Ethplorer {
         curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
         curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
         $rjson = curl_exec($ch);
-        if(filter_input(INPUT_GET, "debugRPC")){
-            echo "Response: " . var_export($rjson, true) . "\n";
-            die;
-        }
-        @file_put_contents(__DIR__ . '/../log/jsonrpc-request.log', '[' . date('Y-m-d H:i:s') . "] Response {$id}: " . var_export($rjson, true) . "\n", FILE_APPEND);
+        $this->log($logFile, "Response {$id}: " . var_export($rjson, true), $log);
         if($rjson && (is_string($rjson)) && ('{' === $rjson[0])){
             $json = json_decode($rjson, JSON_OBJECT_AS_ARRAY);
             if(isset($json["result"])){
@@ -3362,7 +3357,7 @@ class Ethplorer {
                 $result = ["error" => $json["error"]];
             }
         }
-        @file_put_contents(__DIR__ . '/../log/jsonrpc-request.log', '[' . date('Y-m-d H:i:s') . "] Result {$id}: " . var_export($result, true) . "\n", FILE_APPEND);
+        $this->log($logFile, "Result {$id}: " . var_export($result, true), $log);
         return $result;
     }
 
@@ -3460,6 +3455,12 @@ class Ethplorer {
             'symbol' => 'ETH',
             'decimals' => 18
         );
+    }
+
+    protected function log($file, $message, $log = true){
+        if($log){
+            @file_put_contents(__DIR__ . '/../log/' . $file . '.log', '[' . date('Y-m-d H:i:s') . "] " . $message . "\n", FILE_APPEND);
+        }
     }
 
     protected function _cliDebug($message){
