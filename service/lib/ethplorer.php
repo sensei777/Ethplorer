@@ -3334,7 +3334,9 @@ class Ethplorer {
         $json = json_encode($data);
         if(filter_input(INPUT_GET, "debugRPC")){
             echo "Request: " . var_export($json, true) . "\n";
-        }        
+        }
+        $id = uniqid();
+        @file_put_contents(__DIR__ . '/../log/jsonrpc-request.log', '[' . date('Y-m-d H:i:s') . "] Request {$id}: " . var_export($json, true) . "\n", FILE_APPEND);
         $ch = curl_init($service);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_HTTPHEADER, array(
@@ -3350,6 +3352,7 @@ class Ethplorer {
             echo "Response: " . var_export($rjson, true) . "\n";
             die;
         }
+        @file_put_contents(__DIR__ . '/../log/jsonrpc-request.log', '[' . date('Y-m-d H:i:s') . "] Response {$id}: " . var_export($rjson, true) . "\n", FILE_APPEND);
         if($rjson && (is_string($rjson)) && ('{' === $rjson[0])){
             $json = json_decode($rjson, JSON_OBJECT_AS_ARRAY);
             if(isset($json["result"])){
@@ -3359,7 +3362,7 @@ class Ethplorer {
                 $result = ["error" => $json["error"]];
             }
         }
-
+        @file_put_contents(__DIR__ . '/../log/jsonrpc-request.log', '[' . date('Y-m-d H:i:s') . "] Result {$id}: " . var_export($result, true) . "\n", FILE_APPEND);
         return $result;
     }
 
