@@ -1507,7 +1507,7 @@ class Ethplorer {
      * @param int $limit       Maximum number of records
      * @return array
      */
-    public function getLastTransfers(array $options = array(), $showEth = FALSE){
+    public function getLastTransfers(array $options = array(), $showTx = FALSE){
         $search = array();
         if(isset($options['address']) && !isset($options['history'])){
             $search['contract'] = $options['address'];
@@ -1518,8 +1518,15 @@ class Ethplorer {
         if(isset($options['token']) && isset($options['history'])){
             $search['contract'] = $options['token'];
         }
-        if(!$showEth && !isset($search['contract'])){
+        if(!$showTx && !isset($search['contract'])){
             $search['isEth'] = false;
+        }
+        if($showTx == self::SHOW_TX_ETH){
+            $search['isEth'] = true;
+        }else if($showTx == self::SHOW_TX_TOKENS){
+            $search['isEth'] = false;
+        }else if($showTx && isset($search['isEth'])){
+            unset($search['isEth']);
         }
         if(!isset($options['type'])){
             $search['type'] = 'transfer';
@@ -1653,7 +1660,7 @@ class Ethplorer {
             $tokenSymbol = '';
             $isToken = $this->getToken($address);
             if($isToken){
-                $operations = $this->getLastTransfers($options, $this->showTx ? TRUE : FALSE);
+                $operations = $this->getLastTransfers($options);
                 $dec = Decimal::create($isToken['decimals']);
                 $tokenName = isset($isToken['name']) ? $isToken['name'] : '';
                 $tokenSymbol = isset($isToken['symbol']) ? $isToken['symbol'] : '';
