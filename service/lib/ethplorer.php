@@ -3338,7 +3338,7 @@ class Ethplorer {
             'params'  => $params
         );
         $logFile = 'jsonrpc-request';
-        $log = ($method !== 'eth_getBalance') && ($method !== 'getCurencyCurrent') && true;
+        $log = ($method !== 'eth_getBalance') && ($method !== 'getCurrencyCurrent') && true;
         $id = uniqid();
         $result = false;
         $json = json_encode($data);
