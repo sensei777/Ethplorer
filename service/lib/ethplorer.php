@@ -1653,7 +1653,7 @@ class Ethplorer {
             $tokenSymbol = '';
             $isToken = $this->getToken($address);
             if($isToken){
-                $operations = $this->getLastTransfers($options);
+                $operations = $this->getLastTransfers($options, $this->showTx ? TRUE : FALSE);
                 $dec = Decimal::create($isToken['decimals']);
                 $tokenName = isset($isToken['name']) ? $isToken['name'] : '';
                 $tokenSymbol = isset($isToken['symbol']) ? $isToken['symbol'] : '';
