@@ -1646,8 +1646,7 @@ class Ethplorer {
             $options = array(
                 'address' => $address,
                 'type' => $type,
-                'limit' => $limit,
-                'history' => true
+                'limit' => $limit
             );
             $aTokens = array();
             $addTokenInfo = true;
