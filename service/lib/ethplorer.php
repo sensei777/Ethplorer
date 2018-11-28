@@ -1451,7 +1451,7 @@ class Ethplorer {
      */
     public function getLastBlock($updateCache = FALSE){
         evxProfiler::checkpoint('getLastBlock', 'START');
-        $lastblock = $this->oCache->get('lastBlock', false, true, 300);
+        $lastblock = $this->oCache->get('lastBlock', false, true, 5);
         if($updateCache || (false === $lastblock)){
             $cursor = $this->oMongo->find('blocks', array(), array('number' => -1), 1, false, array('number'));
             $block = false;
