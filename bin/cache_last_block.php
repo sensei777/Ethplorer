@@ -23,7 +23,11 @@ echo "\n[".date("Y-m-d H:i")."], Started.";
 
 $es = Ethplorer::db($aConfig);
 $es->createProcessLock('lastBlock.lock', 5);
-$es->getLastBlock(true);
+
+for($i=0; $i<9; $i++){
+    $es->getLastBlock(true);
+    sleep(5);
+}
 
 $ms = round(microtime(TRUE) - $startTime, 4);
 echo "\n[".date("Y-m-d H:i")."], Finished, {$ms} s.";

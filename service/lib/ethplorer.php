@@ -1451,11 +1451,11 @@ class Ethplorer {
      */
     public function getLastBlock($updateCache = FALSE){
         evxProfiler::checkpoint('getLastBlock', 'START');
-        $lastblock = $this->oCache->get('lastBlock', false, true, 5);
+        $lastblock = $this->oCache->get('lastBlock', false, true, 300);
         if($updateCache || (false === $lastblock)){
             $cursor = $this->oMongo->find('blocks', array(), array('number' => -1), 1, false, array('number'));
             $block = false;
-            foreach($cursor as $block) break;            
+            foreach($cursor as $block) break;
             $lastblock = $block && isset($block['number']) ? $block['number'] : false;
             $this->oCache->save('lastBlock', $lastblock);
         }
