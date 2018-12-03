@@ -9,7 +9,7 @@ require_once __DIR__ . '/../service/lib/ethplorer.php';
 
 use EverexIO\PHPUnitIterator\TestCase;
 
-class serviceTest extends TestCase
+class serviceTestOld extends TestCase
 {
     private $ethplorer;
     private $config;
