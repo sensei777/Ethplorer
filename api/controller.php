@@ -175,7 +175,7 @@ class ethplorerController {
 
             $apiKeyAllowedCommands = $this->db->getAPIKeyAllowedCommands($key);
             if(!empty($apiKeyAllowedCommands) && (!in_array($command, $apiKeyAllowedCommands))){
-                $this->sendError(135, 'Route ' . $command . 'disabled for this API key', 403);
+                $this->sendError(135, 'Route ' . $command . ' disabled for this API key', 403);
             }
 
             if($isMethodPOST){
