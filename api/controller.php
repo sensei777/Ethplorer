@@ -173,6 +173,11 @@ class ethplorerController {
                 $this->sendError(133, 'API key temporary suspended. Contact support.', 403);
             }
 
+            $apiKeyAllowedCommands = $this->db->getAPIKeyAllowedCommands($key);
+            if(!empty($apiKeyAllowedCommands) && (!in_array($command, $apiKeyAllowedCommands))){
+                $this->sendError(135, 'Route ' + $command + 'disabled for this API key', 403);
+            }
+
             if($isMethodPOST){
                 // @todo: Temporary solution, special key property will be used later
                 if($key == "freekey"){

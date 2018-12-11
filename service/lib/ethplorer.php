@@ -2320,32 +2320,40 @@ class Ethplorer {
         return $result;
     }
 
+    public function getAPIKeySettings($key){
+        return isset($this->aSettings['apiKeys']) && isset($this->aSettings['apiKeys'][$key]) ? $this->aSettings['apiKeys'][$key] : false;
+    }
+    
     public function checkAPIKey($key){
-        return isset($this->aSettings['apiKeys']) && isset($this->aSettings['apiKeys'][$key]);
+        return is_array($this->getAPIKeySettings($key));
     }
 
     public function isSuspendedAPIKey($key){
-        return (isset($this->aSettings['apiKeys'][$key]['suspended']) && $this->aSettings['apiKeys'][$key]['suspended']);
+        $keyData = $this->getAPIKeySettings($key);
+        return ($keyData && isset($keyData['suspended']) && !!$keyData['suspended']);
+    }
+    
+    public function getAPIKeyAllowedCommands($key){
+        $keyData = $this->getAPIKeySettings($key);
+        return ($keyData && isset($keyData['allowedCommands']) && is_array($keyData['allowedCommands'])) ? $keyData['allowedCommands'] : [];
     }
     
     public function getAPIKeyDefaults($key, $option = FALSE){
         $res = FALSE;
         if($this->checkAPIKey($key)){
-            if(is_array($this->aSettings['apiKeys'][$key])){
-                if(FALSE === $option){
-                    $res = $this->aSettings['apiKeys'][$key];
-                }else{
-                    if(isset($this->aSettings['apiKeys'][$key][$option])){
-                        $res = $this->aSettings['apiKeys'][$key][$option];
-                    }
-
-                    if($key != 'freekey' && isset($this->aSettings['personalLimits'])){
-                        foreach($this->aSettings['personalLimits'] as $cmd => $aLimits){
-                            if($cmd == $option){
-                                foreach($aLimits as $opt => $limit){
-                                    if(!isset($res[$opt]) || ($res[$opt] < $limit)){
-                                        $res[$opt] = $limit;
-                                    }
+            $keyData = $this->getAPIKeySettings($key);
+            if(FALSE === $option){
+                $res = $keyData;
+            }else{
+                if(isset($keyData[$option])){
+                    $res = $$keyData[$option];
+                }
+                if($key != 'freekey' && isset($this->aSettings['personalLimits'])){
+                    foreach($this->aSettings['personalLimits'] as $cmd => $aLimits){
+                        if($cmd == $option){
+                            foreach($aLimits as $opt => $limit){
+                                if(!isset($res[$opt]) || ($res[$opt] < $limit)){
+                                    $res[$opt] = $limit;
                                 }
                             }
                         }
