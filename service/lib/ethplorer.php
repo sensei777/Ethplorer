@@ -2882,10 +2882,10 @@ class Ethplorer {
         return $aResult;
     }
 
-    public function getAddressPriceHistoryGrouped($address, $updateCache = FALSE, $withEth = FALSE){
-        evxProfiler::checkpoint('getAddressPriceHistoryGrouped', 'START', 'address=' . $address . ', withEth=' . ($withEth ? 'TRUE' : 'FALSE'));
+    public function getAddressPriceHistoryGrouped($address, $updateCache = FALSE){
+        evxProfiler::checkpoint('getAddressPriceHistoryGrouped', 'START', 'address=' . $address . ', showTx=' . $this->showTx);
 
-        $cache = 'address_operations_history-' . $address . ($withEth ? '-eth' : '');
+        $cache = 'address_operations_history-' . $address . '-' . $this->showTx;
         $result = $this->oCache->get($cache, false, true);
         $updateCache = false;
         if($result && isset($result['timestamp'])){
@@ -2895,7 +2895,10 @@ class Ethplorer {
             $result = false;
             $updateCache = false;
         }
-        
+        $withEth = FALSE;
+        if($this->showTx == self::SHOW_TX_ALL || $this->showTx == self::SHOW_TX_ETH){
+            $withEth = TRUE;
+        }
         if(FALSE === $result || $updateCache){
             
             $opCount = $this->countOperations($address, FALSE);
@@ -2920,12 +2923,10 @@ class Ethplorer {
 
             foreach($aSearch as $cond){
                 $search = array($cond => $address);
-                if(!$withEth){
-                    if($this->useOperations2){
-                        $search['isEth'] = false;
-                    }else{
-                        $search['contract'] = array('$ne' => 'ETH');
-                    }
+                if($this->showTx == self::SHOW_TX_ETH){
+                    $search['isEth'] = true;
+                }else if($this->showTx == self::SHOW_TX_TOKENS){
+                    $search['isEth'] = false;
                 }
                 if($updateCache){
                     $search = array('$and' => array($search, array('timestamp' => array('$gt' => $result['timestamp']))));

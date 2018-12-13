@@ -568,8 +568,9 @@ class ethplorerController {
                 $this->sendError(104, 'Invalid address format');
             }
         }
-        $withEth = (isset($_GET["withEth"]) && (bool)$_GET["withEth"]) ? TRUE : FALSE;
-        $result = array('history' => $this->db->getAddressPriceHistoryGrouped($address, FALSE, $withEth));
+        $showTx = isset($_GET["showTx"]) ? $_GET["showTx"] : 'tokens';
+        if($showTx) $this->db->setShowTx($showTx);
+        $result = array('history' => $this->db->getAddressPriceHistoryGrouped($address, FALSE));
         if(isset($result['history']['cache'])) $this->cacheState = $result['history']['cache'];
         else $this->cacheState = '';
         $this->sendResult($result);
