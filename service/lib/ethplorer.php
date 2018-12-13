@@ -2885,7 +2885,7 @@ class Ethplorer {
     public function getAddressPriceHistoryGrouped($address, $updateCache = FALSE){
         evxProfiler::checkpoint('getAddressPriceHistoryGrouped', 'START', 'address=' . $address . ', showTx=' . $this->showTx);
 
-        $cache = 'address_operations_history-' . $address . '-' . $this->showTx;
+        $cache = 'address_operations_history-' . $address . '-showTx-' . $this->showTx;
         $result = $this->oCache->get($cache, false, true);
         $updateCache = false;
         if($result && isset($result['timestamp'])){
