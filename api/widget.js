@@ -157,11 +157,17 @@ ethplorerWidget = {
                 address = preloadMethod.options.address.toString().toLowerCase();
                 api += ('/' + address);
             }
+            var showTx = 'all';
+            try{
+                if(localStorage && (null !== localStorage.getItem('showTx'))){
+                    showTx = localStorage.getItem('showTx');
+                }
+            }catch(e){}
             var params = {
                 apiKey: 'ethplorer.widget',
                 domain: document.location.href,
                 period: 730,
-                showTx: preloadMethod.options.showTx ? preloadMethod.options.showTx : '',
+                showTx: showTx,
             };
 
             $.getJSON(api, params, function(_address){
