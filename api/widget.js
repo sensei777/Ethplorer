@@ -161,7 +161,7 @@ ethplorerWidget = {
                 apiKey: 'ethplorer.widget',
                 domain: document.location.href,
                 period: 730,
-                withEth: preloadMethod.options.withEth ? preloadMethod.options.withEth : '',
+                showTx: preloadMethod.options.showTx ? preloadMethod.options.showTx : '',
             };
 
             $.getJSON(api, params, function(_address){
@@ -2489,7 +2489,7 @@ ethplorerWidget.Type['addressPriceHistoryGrouped'] = function(element, options, 
     };
 
     this.getRequestParams = function(additionalParams){
-        var requestOptions = ['period', 'address', 'withEth', 'type', 'theme'];
+        var requestOptions = ['period', 'address', 'showTx', 'type', 'theme'];
         var params = {
             apiKey: 'ethplorer.widget'
         };

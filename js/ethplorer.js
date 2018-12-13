@@ -1239,8 +1239,9 @@ Ethplorer = {
                         getCode: true,
                         address: address,
                         period: 730,
+                        showTx: Ethplorer.showTx
                     };
-                if(Ethplorer.Storage.get('withEth', false)) opt['withEth'] = true;
+                //if(Ethplorer.Storage.get('withEth', false)) opt['withEth'] = true;
                 ethplorerWidget.init(
                     '#token-price-history-grouped-widget',
                     'addressPriceHistoryGrouped',
