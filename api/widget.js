@@ -2185,8 +2185,8 @@ ethplorerWidget.Type['addressPriceHistoryGrouped'] = function(element, options, 
                 if(opt && opt.showTx){
                     this.options['showTx'] = opt.showTx;
                 }
-                this.el.empty();
-                this.el.html(this.templates.loader);
+                //this.el.empty();
+                //this.el.html(this.templates.loader);
                 this.reloadData = false;
             }
             $.getJSON(this.api, this.getRequestParams(), this.refreshWidget);
