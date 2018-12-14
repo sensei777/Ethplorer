@@ -1397,6 +1397,7 @@ Ethplorer = {
         $('#' + tableId).show();
     },
     showTransfers: function(switcher, type){
+        var data = Ethplorer.data;
         Ethplorer.Nav.del('transfers');
         if(switcher.checked){
             type = 'all';
@@ -1413,6 +1414,9 @@ Ethplorer = {
         Ethplorer.gaSendEvent('userAction', 'listShowTx', type);
         Ethplorer.Storage.set('showTx', type);
         Ethplorer.Nav.set('showTx', type);
+        if(!data.token && ethplorerWidget && ethplorerWidget.drawGoogleControlCharts){
+            ethplorerWidget.drawGoogleControlCharts(true);
+        }
         //if(type != 'all') Ethplorer.Nav.set('showTx', type);
         //else Ethplorer.Nav.del('showTx');
         var tab = Ethplorer.getActiveTab();
