@@ -1415,7 +1415,7 @@ Ethplorer = {
         Ethplorer.Storage.set('showTx', type);
         Ethplorer.Nav.set('showTx', type);
         if(!data.token && ethplorerWidget && ethplorerWidget.drawGoogleControlCharts){
-            ethplorerWidget.drawGoogleControlCharts(true);
+            ethplorerWidget.drawGoogleControlCharts(true, {showTx: type});
         }
         //if(type != 'all') Ethplorer.Nav.set('showTx', type);
         //else Ethplorer.Nav.del('showTx');

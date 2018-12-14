@@ -87,10 +87,10 @@ ethplorerWidget = {
             google.load('visualization', '1', {'packages': ['controls'], 'language': 'en', callback : ethplorerWidget.drawGoogleControlCharts});
         }
     },
-    drawGoogleControlCharts: function(reloadData){
+    drawGoogleControlCharts: function(reloadData, opt){
         if(ethplorerWidget.chartControlWidgets && ethplorerWidget.chartControlWidgets.length)
             for(var i=0; i<ethplorerWidget.chartControlWidgets.length; i++)
-                    ethplorerWidget.chartControlWidgets[i].load(reloadData);
+                    ethplorerWidget.chartControlWidgets[i].load(reloadData, opt);
     },
     getGoogleControlOptions: function(dteRangeStart, dteRangeEnd, options, series, size){
         var controlOptions = {
@@ -2169,7 +2169,7 @@ ethplorerWidget.Type['addressPriceHistoryGrouped'] = function(element, options, 
         loader: '<div class="txs-loading">Loading...</div>',
     };
 
-    this.load = function(reloadData){
+    this.load = function(reloadData, opt){
         var address;
         if(options && options.address){
             address = options.address.toString().toLowerCase();
@@ -2182,11 +2182,9 @@ ethplorerWidget.Type['addressPriceHistoryGrouped'] = function(element, options, 
             this.refreshWidget(ethplorerWidget.preloadPriceHistory[address]);
         }else{
             if(this.reloadData){
-                try{
-                    if(localStorage && (null !== localStorage.getItem('showTx'))){
-                        this.options['showTx'] = localStorage.getItem('showTx');
-                    }
-                }catch(e){}
+                if(opt && opt.showTx){
+                    this.options['showTx'] = opt.showTx;
+                }
                 this.el.empty();
                 this.el.html(this.templates.loader);
                 this.reloadData = false;
