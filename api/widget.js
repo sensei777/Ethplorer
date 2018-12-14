@@ -87,10 +87,10 @@ ethplorerWidget = {
             google.load('visualization', '1', {'packages': ['controls'], 'language': 'en', callback : ethplorerWidget.drawGoogleControlCharts});
         }
     },
-    drawGoogleControlCharts: function(){
+    drawGoogleControlCharts: function(reloadData){
         if(ethplorerWidget.chartControlWidgets && ethplorerWidget.chartControlWidgets.length)
             for(var i=0; i<ethplorerWidget.chartControlWidgets.length; i++)
-                    ethplorerWidget.chartControlWidgets[i].load();
+                    ethplorerWidget.chartControlWidgets[i].load(reloadData);
     },
     getGoogleControlOptions: function(dteRangeStart, dteRangeEnd, options, series, size){
         var controlOptions = {
@@ -2139,6 +2139,7 @@ ethplorerWidget.Type['addressPriceHistoryGrouped'] = function(element, options, 
     this.widgetPriceData = null;
     this.resizeTimer = null;
     this.cachedWidth = $(window).width();
+    this.reloadData = false;
 
     this.options = {
         period: 365,
@@ -2168,15 +2169,23 @@ ethplorerWidget.Type['addressPriceHistoryGrouped'] = function(element, options, 
         loader: '<div class="txs-loading">Loading...</div>',
     };
 
-    this.load = function(){
+    this.load = function(reloadData){
         var address;
         if(options && options.address){
             address = options.address.toString().toLowerCase();
         }
-        if(address && ethplorerWidget.preloadPriceHistory && ethplorerWidget.preloadPriceHistory[address]){
+        if(reloadData){
+            this.reloadData = true;
+        }
+        if(!this.reloadData && address && ethplorerWidget.preloadPriceHistory && ethplorerWidget.preloadPriceHistory[address]){
             //console.log(ethplorerWidget.preloadPriceHistory[address]);
             this.refreshWidget(ethplorerWidget.preloadPriceHistory[address]);
         }else{
+            if(this.reloadData){
+                this.el.empty();
+                this.el.html(this.templates.loader);
+                this.reloadData = false;
+            }
             $.getJSON(this.api, this.getRequestParams(), this.refreshWidget);
         }
     };
