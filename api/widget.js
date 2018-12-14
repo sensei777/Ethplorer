@@ -2541,6 +2541,7 @@ ethplorerWidget.Type['addressPriceHistoryGrouped'] = function(element, options, 
                 if('function' === typeof(obj.options.onLoad)){
                     obj.options.onLoad();
                 }
+                if(obj.reloadData) obj.el.fadeOut(250, () => {obj.el.fadeIn(150);});
                 setTimeout(ethplorerWidget.fixTilda, 300);
             }else{
                 obj.el.find('.txs-loading').text('No data for chart');
