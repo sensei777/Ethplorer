@@ -2182,6 +2182,11 @@ ethplorerWidget.Type['addressPriceHistoryGrouped'] = function(element, options, 
             this.refreshWidget(ethplorerWidget.preloadPriceHistory[address]);
         }else{
             if(this.reloadData){
+                try{
+                    if(localStorage && (null !== localStorage.getItem('showTx'))){
+                        this.options['showTx'] = localStorage.getItem('showTx');
+                    }
+                }catch(e){}
                 this.el.empty();
                 this.el.html(this.templates.loader);
                 this.reloadData = false;
