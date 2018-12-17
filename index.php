@@ -524,7 +524,7 @@ if(is_array($rParts) && isset($rParts[2])){
                                 <td>Create Tx</td>
                                 <td id="address-token-createdTx" data-type="ethplorer" class="list-field"></td>
                             </tr>
-                            <tr>
+                            <tr class="blue even address-balance">
                                 <td>Balance</td>
                                 <td id="address-balance" data-type="ether-full" class="list-field"></td>
                             </tr>

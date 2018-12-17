@@ -409,7 +409,7 @@ td.list-field {
     text-overflow: ellipsis;
 }
 
-.token-related .blue td {
+.address-balance, .token-related .blue td {
     font-size: 20px;
     white-space: normal;
 }
@@ -1184,7 +1184,7 @@ li.ui-menu-item.have-more {
 }
 
 @media screen and (max-width: 699px) {
-    .token-related .blue td {
+    .address-balance, .token-related .blue td {
         font-size: 18px;
     }
 
@@ -1235,7 +1235,7 @@ li.ui-menu-item.have-more {
     #address-issuances tr td:last-child {
         min-width: 140px;
     }
-    .token-related .blue td {
+    .address-balance, .token-related .blue td {
         font-size: 16px;
     }
     #address-token-transfers td {
