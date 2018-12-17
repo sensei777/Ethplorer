@@ -1026,6 +1026,13 @@ Ethplorer = {
             // Fill prices
             var totalPrice = 0;
             var lastTotalPrice = 0;
+            if(Ethplorer.ethPrice && Ethplorer.ethPrice.rate && data.balance){
+                totalPrice = Ethplorer.ethPrice.rate * data.balance;
+                if(Ethplorer.ethPrice.diff){
+                    var lastEthRate = Ethplorer.ethPrice.diff > -100 ? (Ethplorer.ethPrice.rate / (1 + Ethplorer.ethPrice.diff / 100)) : 0;
+                    lastTotalPrice += lastEthRate * data.balance;
+                }
+            }
             for(var k=0; k<data.balances.length; k++){
                 var balance = data.balances[k];
                 var oToken = Ethplorer.prepareToken(data.tokens[balance.contract]);
