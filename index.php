@@ -87,7 +87,7 @@ if(isset($aConfig['sentry']) && is_array($aConfig['sentry'])){
 }
 
 function includeLocal($name){
-    if(file_exists(__DIR__ . '/index.' . $name . '.local.php')) requre_once(__DIR__ . '/index.' . $name . '.local.php');
+    if(file_exists(__DIR__ . '/index.' . $name . '.local.php')) require_once(__DIR__ . '/index.' . $name . '.local.php');
 }
 
 $csvExport = '';
