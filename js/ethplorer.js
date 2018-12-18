@@ -1113,9 +1113,7 @@ Ethplorer = {
                 row.find('td:eq(1)').addClass('text-right');
                 $('#address-token-balances table').append(row);
             }
-            $('#addr-balance').addClass('blue');
-            $('#addr-balance').addClass('even');
-            $('#addr-balance').addClass('address-balance');
+
             if(totalPrice){
                 var value = '~ $&nbsp;' + Ethplorer.Utils.formatNum(totalPrice, true, 2, true, true);
                 if(totalDiff){
@@ -1133,6 +1131,9 @@ Ethplorer = {
         }
 
         if(!data.isContract || !data.token){
+            $('#addr-balance').addClass('blue');
+            $('#addr-balance').addClass('even');
+            $('#addr-balance').addClass('address-balance');
             $('.nav-tabs').hide();
             $('.filter-box').addClass('out-of-tabs');
             if(!$('#address-token-balances table tr').length){
