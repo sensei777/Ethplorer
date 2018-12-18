@@ -1606,14 +1606,6 @@ a.token-update {
     margin-right: 10px;
 }
 
-@media screen and (min-width: 992px) and (max-width: 1199px) {
-	#address-full-balance {
-		display: none;
-	}
-}
-
-@media screen and (max-width: 499px) {
-	#address-full-balance {
-		display: none;
-	}
+#address-balances-total {
+    pointer-events: none;
 }
