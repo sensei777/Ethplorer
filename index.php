@@ -550,7 +550,7 @@ if(is_array($rParts) && isset($rParts[2])){
                     <div class="col-xs-12 col-md-6">
                         <div class="block" id="address-token-balances">
                             <div class="block-header">
-                                <h3>Balances <sup><i class="fa fa-question-circle fa-xs" data-toggle="tooltip" data-placement="bottom" title="ETH + Tokens"></i></sup>
+                                <h3>Balances <sup><i class="fa fa-question-circle fa-xs" data-toggle="tooltip" data-placement="top" title="ETH&nbsp;+&nbsp;Tokens"></i></sup>
                                     <div id="address-balances-total"></div>
                                 </h3>
                             </div>
@@ -784,7 +784,7 @@ if('undefined' !== typeof(Raven)){
 }
 <?php endif; ?>
 $(document).ready(function(){
-    $('[data-toggle="tooltip"]').tooltip();
+    $('[data-toggle="tooltip"]').tooltip({html:true});
     $.fn.bootstrapBtn = $.fn.button.noConflict();
     <?php if($debugEnabled): ?>
     Ethplorer.debug = true;
