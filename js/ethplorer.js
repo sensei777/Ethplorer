@@ -1022,7 +1022,7 @@ Ethplorer = {
 
             Ethplorer.gaSendEvent('ethpPageView', 'viewToken', oToken.name ? oToken.name : 'N/A');
 
-        }else if(data.balances && data.balances.length){
+        }else{
             // Fill prices
             var totalPrice = 0;
             var lastTotalPrice = 0;
@@ -1033,87 +1033,88 @@ Ethplorer = {
                     lastTotalPrice += lastEthRate * data.balance;
                 }
             }
-            for(var k=0; k<data.balances.length; k++){
-                var balance = data.balances[k];
-                var oToken = Ethplorer.prepareToken(data.tokens[balance.contract]);
-                var qty = Ethplorer.Utils.toBig(balance.balance);
-                if(Ethplorer.Utils.isSafari()){
-                    qty = parseFloat(qty.toString()) / Math.pow(10, oToken.decimals);
-                }else{
-                    qty = qty.div(Math.pow(10, oToken.decimals));
-                }
-                var qFloat = parseFloat(qty.toString());
-                data.balances[k].qty = qty;
-                data.balances[k].price = false;
-                data.balances[k].balanceUSD = false;
-                if((qFloat > 0) && oToken.price && oToken.price.rate){
-                    data.balances[k].price = oToken.price.rate;
-                    data.balances[k].balanceUSD = oToken.price.rate * qFloat;
-                    var lastRate = oToken.price.diff > -100 ? (oToken.price.rate / (1 + oToken.price.diff / 100)) : 0;
-                    lastTotalPrice += qFloat * lastRate;
-                    totalPrice += data.balances[k].balanceUSD;
-                }
-            }
-            var totalDiff = Ethplorer.Utils.round(Ethplorer.Utils.pdiff(totalPrice, lastTotalPrice), 2);
-            // Sort
-            var balances = data.balances.sort(function(a,b){
-                if(a.price && !b.price) return -1;
-                if(b.price && !a.price) return 1;
-                if(a.balanceUSD < b.balanceUSD)
-                    return 1;
-                if (a.balanceUSD > b.balanceUSD)
-                    return -1;
-                return 0;
-            });
-
-            // Show
-            $('#address-token-balances table').empty();
-            for(var k=0; k<balances.length; k++){
-                var balance = balances[k];
-                var oToken = Ethplorer.prepareToken(data.tokens[balance.contract]);
-                var row = $('<TR>');
-                var qty = balance.qty;
-                if(!parseFloat(qty.toString()) && !(balance.totalIn || balance.totalOut)){
-                    // No balance and no movement - skip
-                    continue;
-                }
-                var value = Ethplorer.Utils.formatNum(qty, true, oToken.decimals, true, true) + ' ' + oToken.symbol;
-                if(balances[k].price){
-                    var rate = oToken.price;
-                    var price = balances[k].balanceUSD;
-                    value += ('<br><div class="balances-price" title="$' + price + '">$&nbsp;' + Ethplorer.Utils.formatNum(price, true, 2, true, true) + ' ');
-                    if(rate.diff){
-                        var cls = getDiffClass(rate.diff);
-                        var hint = 'Updated at ' + Ethplorer.Utils.ts2date(rate.ts, true);
-                        if(rate.diff > 0){
-                            rate.diff = '+' + rate.diff;
-                        }
-                        value = value + ' <span class="' + cls + '" title="' + hint + '">(' + Ethplorer.Utils.round(rate.diff, 2) + '%)</span>'
-                    }
-                    value = value + '</div>';
-
-                }
-                // @temporary off
-                if(false && (balance.totalIn || balance.totalOut)){
-                    value += '<br />';
-                    var totalIn = Ethplorer.Utils.toBig(balance.totalIn);
-                    var totalOut = Ethplorer.Utils.toBig(balance.totalOut);
+            if(data.balances && data.balances.length){
+                for(var k=0; k<data.balances.length; k++){
+                    var balance = data.balances[k];
+                    var oToken = Ethplorer.prepareToken(data.tokens[balance.contract]);
+                    var qty = Ethplorer.Utils.toBig(balance.balance);
                     if(Ethplorer.Utils.isSafari()){
-                        totalIn = parseFloat(totalIn.toString()) / Math.pow(10, oToken.decimals);
-                        totalOut = parseFloat(totalOut.toString()) / Math.pow(10, oToken.decimals);
+                        qty = parseFloat(qty.toString()) / Math.pow(10, oToken.decimals);
                     }else{
-                        totalIn = totalIn.div(Math.pow(10, oToken.decimals));
-                        totalOut = totalOut.div(Math.pow(10, oToken.decimals));
+                        qty = qty.div(Math.pow(10, oToken.decimals));
                     }
-                    value += ('<div class="total-in-out-small">Total In: ' + Ethplorer.Utils.formatNum(totalIn, true, oToken.decimals, true) + '<br />');
-                    value += ('Total Out: ' + Ethplorer.Utils.formatNum(totalOut, true, oToken.decimals, true) + '</div>');
+                    var qFloat = parseFloat(qty.toString());
+                    data.balances[k].qty = qty;
+                    data.balances[k].price = false;
+                    data.balances[k].balanceUSD = false;
+                    if((qFloat > 0) && oToken.price && oToken.price.rate){
+                        data.balances[k].price = oToken.price.rate;
+                        data.balances[k].balanceUSD = oToken.price.rate * qFloat;
+                        var lastRate = oToken.price.diff > -100 ? (oToken.price.rate / (1 + oToken.price.diff / 100)) : 0;
+                        lastTotalPrice += qFloat * lastRate;
+                        totalPrice += data.balances[k].balanceUSD;
+                    }
                 }
-                row.append('<td class="cut-long-text">' + Ethplorer.Utils.getEthplorerLink(balance.contract, oToken.name, false) + '</td>');
-                row.append('<td>' + value + '</td>');
-                row.find('td:eq(1)').addClass('text-right');
-                $('#address-token-balances table').append(row);
+                // Sort
+                var balances = data.balances.sort(function(a,b){
+                    if(a.price && !b.price) return -1;
+                    if(b.price && !a.price) return 1;
+                    if(a.balanceUSD < b.balanceUSD)
+                        return 1;
+                    if (a.balanceUSD > b.balanceUSD)
+                        return -1;
+                    return 0;
+                });
+                // Show
+                $('#address-token-balances table').empty();
+                for(var k=0; k<balances.length; k++){
+                    var balance = balances[k];
+                    var oToken = Ethplorer.prepareToken(data.tokens[balance.contract]);
+                    var row = $('<TR>');
+                    var qty = balance.qty;
+                    if(!parseFloat(qty.toString()) && !(balance.totalIn || balance.totalOut)){
+                        // No balance and no movement - skip
+                        continue;
+                    }
+                    var value = Ethplorer.Utils.formatNum(qty, true, oToken.decimals, true, true) + ' ' + oToken.symbol;
+                    if(balances[k].price){
+                        var rate = oToken.price;
+                        var price = balances[k].balanceUSD;
+                        value += ('<br><div class="balances-price" title="$' + price + '">$&nbsp;' + Ethplorer.Utils.formatNum(price, true, 2, true, true) + ' ');
+                        if(rate.diff){
+                            var cls = getDiffClass(rate.diff);
+                            var hint = 'Updated at ' + Ethplorer.Utils.ts2date(rate.ts, true);
+                            if(rate.diff > 0){
+                                rate.diff = '+' + rate.diff;
+                            }
+                            value = value + ' <span class="' + cls + '" title="' + hint + '">(' + Ethplorer.Utils.round(rate.diff, 2) + '%)</span>'
+                        }
+                        value = value + '</div>';
+
+                    }
+                    // @temporary off
+                    if(false && (balance.totalIn || balance.totalOut)){
+                        value += '<br />';
+                        var totalIn = Ethplorer.Utils.toBig(balance.totalIn);
+                        var totalOut = Ethplorer.Utils.toBig(balance.totalOut);
+                        if(Ethplorer.Utils.isSafari()){
+                            totalIn = parseFloat(totalIn.toString()) / Math.pow(10, oToken.decimals);
+                            totalOut = parseFloat(totalOut.toString()) / Math.pow(10, oToken.decimals);
+                        }else{
+                            totalIn = totalIn.div(Math.pow(10, oToken.decimals));
+                            totalOut = totalOut.div(Math.pow(10, oToken.decimals));
+                        }
+                        value += ('<div class="total-in-out-small">Total In: ' + Ethplorer.Utils.formatNum(totalIn, true, oToken.decimals, true) + '<br />');
+                        value += ('Total Out: ' + Ethplorer.Utils.formatNum(totalOut, true, oToken.decimals, true) + '</div>');
+                    }
+                    row.append('<td class="cut-long-text">' + Ethplorer.Utils.getEthplorerLink(balance.contract, oToken.name, false) + '</td>');
+                    row.append('<td>' + value + '</td>');
+                    row.find('td:eq(1)').addClass('text-right');
+                    $('#address-token-balances table').append(row);
+                }
             }
 
+            var totalDiff = Ethplorer.Utils.round(Ethplorer.Utils.pdiff(totalPrice, lastTotalPrice), 2);
             if(totalPrice){
                 var value = '~ $&nbsp;' + Ethplorer.Utils.formatNum(totalPrice, true, 2, true, true);
                 if(totalDiff){
