@@ -2140,6 +2140,7 @@ ethplorerWidget.Type['addressPriceHistoryGrouped'] = function(element, options, 
     this.resizeTimer = null;
     this.cachedWidth = $(window).width();
     this.reloadData = false;
+    this.appendEthplorerLink = false;
 
     this.options = {
         period: 365,
@@ -2497,6 +2498,9 @@ ethplorerWidget.Type['addressPriceHistoryGrouped'] = function(element, options, 
         // draw chart
         dashboard.bind(control, chart);
         dashboard.draw(data);
+
+        if(this.reloadData) this.el.fadeOut(250, () => {this.el.fadeIn(150);});
+        this.reloadData = false;
     };
 
     this.init = function(){
@@ -2537,13 +2541,17 @@ ethplorerWidget.Type['addressPriceHistoryGrouped'] = function(element, options, 
                 obj.widgetData = data.history;
                 obj.el.find('.txs-loading').remove();
                 obj.drawChart(data.history);
-                if(!obj.reloadData) ethplorerWidget.appendEthplorerLink(obj);
+                if(!obj.reloadData || obj.appendEthplorerLink){
+                    ethplorerWidget.appendEthplorerLink(obj);
+                    obj.appendEthplorerLink = false;
+                }
                 if('function' === typeof(obj.options.onLoad)){
                     obj.options.onLoad();
                 }
-                if(obj.reloadData) obj.el.fadeOut(250, () => {obj.el.fadeIn(150);});
+                //if(obj.reloadData) obj.el.fadeOut(250, () => {obj.el.fadeIn(150);});
                 setTimeout(ethplorerWidget.fixTilda, 300);
             }else{
+                obj.appendEthplorerLink = true;
                 obj.el.html(obj.templates.loader);
                 obj.el.find('.txs-loading').text('No data for chart');
                 if(!obj.reloadData){
@@ -2554,8 +2562,8 @@ ethplorerWidget.Type['addressPriceHistoryGrouped'] = function(element, options, 
                     $('.txs-loading').css('min-height', '200px');
                     $('.txs-loading').css('padding-top', '80px');
                 }
+                obj.reloadData = false;
             }
-            obj.reloadData = false;
         };
     }(this);
 
