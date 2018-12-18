@@ -1144,7 +1144,7 @@ Ethplorer = {
                 row.append(cell);
                 $('#address-token-balances table').append(row);
                 $('#address-token-balances table').show();
-                $('#address-balances-total').remove();
+                if(!totalPrice) $('#address-balances-total').remove();
             }
             $('#address-token-balances').show();
         }else{
