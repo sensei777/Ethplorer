@@ -200,10 +200,11 @@ class evxCache {
                 }
                 $aCachedData = array('lifetime' => $lifetime, 'data' => $data, 'lock' => true);
                 if('redis' == $this->driver){
+                    $saveOptions = JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE | JSON_PARTIAL_OUTPUT_ON_ERROR;
                     if($nonExpiration){
-                        $saveRes = $this->oDriver->set($entryName, json_encode($aCachedData));
+                        $saveRes = $this->oDriver->set($entryName, json_encode($aCachedData, $saveOptions));
                     }else{
-                        $saveRes = $this->oDriver->set($entryName, json_encode($aCachedData), 'ex', $ttl);
+                        $saveRes = $this->oDriver->set($entryName, json_encode($aCachedData, $saveOptions), 'ex', $ttl);
                     }
                     if('OK' !== (string)$saveRes){
                         error_log("Write data to redis failed: " . $saveRes . " Data: " . json_encode($aCachedData) . " TTL: " . $ttl);

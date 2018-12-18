@@ -86,6 +86,10 @@ if(isset($aConfig['sentry']) && is_array($aConfig['sentry'])){
     }
 }
 
+function includeLocal($name){
+    if(file_exists(__DIR__ . '/index.' . $name . '.local.php')) require_once(__DIR__ . '/index.' . $name . '.local.php');
+}
+
 $csvExport = '';
 if(is_array($rParts) && isset($rParts[2])){
     $csvExport = ' <span class="export-csv-spinner"><i class="fa fa-spinner fa-spin"></i> Export...</span><span class="export-csv"><a class="download" rel="nofollow" target="_blank" href="/service/exportcsv.php?data=' . $rParts[2] . '">Export as CSV</a></span>';
@@ -165,6 +169,7 @@ if(is_array($rParts) && isset($rParts[2])){
         </script>
     <?php } ?>
     <script src="/api/widget.js?v=<?=$codeVersion?>"></script>
+    <?php includeLocal('head'); ?>
 </head>
 <body>
 <div style="position: relative; min-height: 100vh;">
@@ -196,12 +201,7 @@ if(is_array($rParts) && isset($rParts[2])){
     <div class="container">
         <div class="starter-template">
             <div id="page-create" class="page">
-                <script async src="//pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
-                <!-- ethp-links-728x15 -->
-                <ins class="adsbygoogle" data-ad-client="ca-pub-9429151221150004" data-ad-slot="2734463808"></ins>
-                <script>
-                (adsbygoogle = window.adsbygoogle || []).push({});
-                </script>
+                <?php includeLocal('ads'); ?>
                 <?php if($error): ?>
                 <div id="error" class="content-page text-center">
                     <h1 class="text-danger">ERROR</h1>
@@ -715,6 +715,7 @@ if(is_array($rParts) && isset($rParts[2])){
             </div>
         </div>
     </div>
+    <?php includeLocal('bottom'); ?>
     <div id="disqus_thread" class="container"></div>
     <script>
 
