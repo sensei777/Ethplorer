@@ -1609,3 +1609,7 @@ a.token-update {
 #address-balances-total {
     pointer-events: none;
 }
+
+.tooltip{
+   font-size: 0.8em;
+}
