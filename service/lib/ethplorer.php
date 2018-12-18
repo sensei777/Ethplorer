@@ -998,7 +998,7 @@ class Ethplorer {
     public function getIssuances($tx){
         return $this->getOperations($tx, array('$in' => array('issuance', 'burn', 'mint')));
     }
-
+    
     /**
      * Returns list of known tokens.
      *
@@ -3377,46 +3377,60 @@ class Ethplorer {
         return $result;
     }
 
-    public function searchToken($token){
-        $result = array('results' => array(), 'total' => 0);
+    protected function getTokensForSearch(){
+        $aResult = $this->oCache->get('tokens-simple', false, true, 3600);
+        if(false === $aResult){
+            $aResult = [];
+            $this->getTokens();
+            $this->aTokens['0xf3763c30dd6986b53402d41a8552b8f7f6a6089b'] = array(
+                'name' => 'Chainy',
+                'symbol' => false,
+                'txsCount' => 99999
+            );
+            foreach($this->aTokens as $address => $aToken){
+                $name = substr($aToken['name'], 0, 32);
+                if($name && ($name[0] === "\t")) continue;
+                $aSearchToken = [
+                    'address' => $address,
+                    'name' => trim($name),
+                    'symbol' => trim($aToken['symbol']),
+                    'txsCount' => $aToken['txsCount']
+                ];
+                if(isset($this->aSettings['client']) && isset($this->aSettings['client']['tokens']) && isset($this->aSettings['client']['tokens'][$address])){
+                    $aClientToken = $this->aSettings['client']['tokens'][$address];
+                    if(!empty($aClientToken['name'])){
+                        $aSearchToken['name'] = $aClientToken['name'];
+                    }
+                    if(!empty($aClientToken['symbol'])){
+                        $aSearchToken['symbol'] = $aClientToken['symbol'];
+                    }
+                }
+                $aResult[] = $aSearchToken;
+            }
+            uasort($aResult, array($this, 'sortTokensByTxsCount'));
+            foreach($aResult as $i => $aToken){
+                unset($aResult[$i]['txsCount']);
+            }
+            $this->oCache->save('tokens-simple', $aResult);
+        }
+        return $aResult;
+    }
+
+    public function searchToken($token, $maxResults = 5){
+        $result = array('results' => array(), 'search' => $token, 'total' => 0);
         $found = array();
-        $aTokens = $this->getTokens();
-        $aTokens['0xf3763c30dd6986b53402d41a8552b8f7f6a6089b'] = array(
-            'name' => 'Chainy',
-            'symbol' => false,
-            'txsCount' => 99999
-        );
-        if(isset($this->aSettings['client']) && isset($this->aSettings['client']['tokens'])){
-            $aClientTokens = $this->aSettings['client']['tokens'];
-            foreach($aClientTokens as $address => $aClientToken){
-                if(isset($aTokens[$address])){
-                    if(isset($aClientToken['name'])){
-                        $aTokens[$address]['name'] = $aClientToken['name'];
-                    }
-                    if(isset($aClientToken['symbol'])){
-                        $aTokens[$address]['symbol'] = $aClientToken['symbol'];
-                    }
+        $aTokens = $this->getTokensForSearch();
+        $count = 0;
+        $search = strtolower($token);
+        foreach($aTokens as $aToken){
+            if((FALSE !== strpos($aToken['address'], $search)) || (FALSE !== strpos(strtolower($aToken['name']), $search)) || (FALSE !== strpos(strtolower($aToken['symbol']), $search))){
+                $count++;
+                $result['total'] = $count;
+                if($count <= $maxResults){
+                    $result['results'][] = [$aToken['name'], $aToken['symbol'], $aToken['address']];
                 }
             }
         }
-        foreach($aTokens as $address => $aToken){
-            $search = strtolower($token);
-            if((strpos($address, $search) !== FALSE) || (!empty($aToken['name']) && (strpos(strtolower($aToken['name']), $search) !== FALSE)) || (!empty($aToken['symbol']) && (strpos(strtolower($aToken['symbol']), $search) !== FALSE))){
-                $aToken['address'] = $address;
-                $found[] = $aToken;
-            }
-        }
-        uasort($found, array($this, 'sortTokensByTxsCount'));
-        $i = 0;
-        foreach($found as $aToken){
-            if($i < 6){
-                $aToken += array('name' => '', 'symbol' => '');
-                $result['results'][] = array($aToken['name'], $aToken['symbol'], $aToken['address']);
-            }
-            $i++;
-        }
-        $result['total'] = $i;
-        $result['search'] = $token;
         return $result;
     }
 
