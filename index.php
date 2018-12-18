@@ -715,6 +715,7 @@ if(is_array($rParts) && isset($rParts[2])){
             </div>
         </div>
     </div>
+    <?php includeLocal('bottom'); ?>
     <div id="disqus_thread" class="container"></div>
     <script>
 
