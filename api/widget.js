@@ -2549,6 +2549,7 @@ ethplorerWidget.Type['addressPriceHistoryGrouped'] = function(element, options, 
                 setTimeout(ethplorerWidget.fixTilda, 300);
             }else{
                 if(obj.reloadData){
+                    obj.widgetData = null;
                     obj.el.html('<div class="txs-loading" style="margin-bottom: 0px !important;margin-top: 0px !important;"></div>');
                 }else{
                     obj.el.html(obj.templates.loader);
