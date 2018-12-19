@@ -2556,8 +2556,8 @@ ethplorerWidget.Type['addressPriceHistoryGrouped'] = function(element, options, 
                     $('.txs-loading').css('padding-top', '10px');
                 }else{
                     obj.addEthplorerLink = true;
-                    $('.ethplorer-widget').css('height', '250px');
-                    $('.txs-loading').css('height', '250px');
+                    $('.ethplorer-widget').css('height', '300px');
+                    $('.txs-loading').css('height', '300px');
                     $('.txs-loading').css('padding-top', '80px');
                 }
             }
