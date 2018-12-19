@@ -2140,6 +2140,7 @@ ethplorerWidget.Type['addressPriceHistoryGrouped'] = function(element, options, 
     this.resizeTimer = null;
     this.cachedWidth = $(window).width();
     this.reloadData = false;
+    this.addEthplorerLink = false;
 
     this.options = {
         period: 365,
@@ -2537,7 +2538,10 @@ ethplorerWidget.Type['addressPriceHistoryGrouped'] = function(element, options, 
                 obj.widgetData = data.history;
                 obj.el.find('.txs-loading').remove();
                 obj.drawChart(data.history);
-                if(!obj.reloadData) ethplorerWidget.appendEthplorerLink(obj);
+                if(!obj.reloadData || obj.addEthplorerLink){
+                    ethplorerWidget.appendEthplorerLink(obj);
+                    obj.addEthplorerLink = false;
+                }
                 if('function' === typeof(obj.options.onLoad)){
                     obj.options.onLoad();
                 }
@@ -2551,7 +2555,9 @@ ethplorerWidget.Type['addressPriceHistoryGrouped'] = function(element, options, 
                     $('.txs-loading').css('min-height', '1px');
                     $('.txs-loading').css('padding-top', '10px');
                 }else{
-                    $('.txs-loading').css('min-height', '200px');
+                    obj.addEthplorerLink = true;
+                    $('.ethplorer-widget').css('height', '250px');
+                    $('.txs-loading').css('height', '250px');
                     $('.txs-loading').css('padding-top', '80px');
                 }
             }
