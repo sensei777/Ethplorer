@@ -2497,9 +2497,6 @@ ethplorerWidget.Type['addressPriceHistoryGrouped'] = function(element, options, 
         // draw chart
         dashboard.bind(control, chart);
         dashboard.draw(data);
-
-        if(this.reloadData) this.el.fadeOut(250, () => {this.el.fadeIn(150);});
-        this.reloadData = false;
     };
 
     this.init = function(){
@@ -2544,7 +2541,7 @@ ethplorerWidget.Type['addressPriceHistoryGrouped'] = function(element, options, 
                 if('function' === typeof(obj.options.onLoad)){
                     obj.options.onLoad();
                 }
-                //if(obj.reloadData) obj.el.fadeOut(250, () => {obj.el.fadeIn(150);});
+                if(obj.reloadData) obj.el.fadeOut(250, () => {obj.el.fadeIn(150);});
                 setTimeout(ethplorerWidget.fixTilda, 300);
             }else{
                 obj.el.html(obj.templates.loader);
@@ -2557,8 +2554,8 @@ ethplorerWidget.Type['addressPriceHistoryGrouped'] = function(element, options, 
                     $('.txs-loading').css('min-height', '200px');
                     $('.txs-loading').css('padding-top', '80px');
                 }
-                obj.reloadData = false;
             }
+            obj.reloadData = false;
         };
     }(this);
 
