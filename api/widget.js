@@ -2548,7 +2548,11 @@ ethplorerWidget.Type['addressPriceHistoryGrouped'] = function(element, options, 
                 if(obj.reloadData) obj.el.fadeOut(250, () => {obj.el.fadeIn(150);});
                 setTimeout(ethplorerWidget.fixTilda, 300);
             }else{
-                obj.el.html(obj.templates.loader);
+                if(obj.reloadData){
+                    obj.el.html('<div class="txs-loading" style="margin-bottom: 0px !important;"></div>');
+                }else{
+                    obj.el.html(obj.templates.loader);
+                }
                 obj.el.find('.txs-loading').text('No data for chart');
                 if(!obj.reloadData){
                     $('.ethplorer-widget').css('min-height', '1px');
