@@ -483,7 +483,8 @@ class ethplorerController {
         }
         $maxLimit = is_array($this->defaults) && isset($this->defaults['limit']) ? $this->defaults['limit'] : 10;
         $limit = max(min(abs((int)$this->getRequest('limit', 10)), $maxLimit), 1);
-        $result = $this->db->getTopTokenHolders($address, $limit);
+        $result = array('holders' => $this->db->getTopTokenHolders($address, $limit));
+        $this->sendResult($result);
     }
 
     protected function _getTopByOperationsCount($limit, $period){
