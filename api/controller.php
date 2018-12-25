@@ -20,7 +20,7 @@ class ethplorerController {
     protected $db;
     protected $command;
     protected $params = array();
-    protected $apiCommands = array('getTxInfo', 'getTokenHistory', 'getAddressTransactions', 'getAddressInfo', 'getTokenInfo', 'getAddressHistory', 'getTopTokens', 'getTop', 'getTokenHistoryGrouped', 'getPriceHistoryGrouped', 'getTokenPriceHistoryGrouped', 'getAddressPriceHistoryGrouped', 'getBlockTransactions', 'getLastBlock', 'getPoolAddresses', 'getPoolLastTransactions', 'getPoolLastOperations');
+    protected $apiCommands = array('getTxInfo', 'getTokenHistory', 'getAddressTransactions', 'getAddressInfo', 'getTokenInfo', 'getAddressHistory', 'getTopTokens', 'getTopTokenHolders', 'getTop', 'getTokenHistoryGrouped', 'getPriceHistoryGrouped', 'getTokenPriceHistoryGrouped', 'getAddressPriceHistoryGrouped', 'getBlockTransactions', 'getLastBlock', 'getPoolAddresses', 'getPoolLastTransactions', 'getPoolLastOperations');
     protected $apiPostCommands = array('createPool', 'deletePool', 'addPoolAddresses', 'deletePoolAddresses', 'clearPoolAddresses');
     protected $defaults;
     protected $startTime;
@@ -464,6 +464,26 @@ class ethplorerController {
                 $result = $this->_getTopByOperationsCount($limit, $period);
         }
         return $result;
+    }
+
+    /**
+     * /getTopTokenHolders method implementation.
+     *
+     * @undocumented
+     * @return array
+     */
+    public function getTopTokenHolders(){
+        $address = $this->getParam(0, '');
+        $address = strtolower($address);
+        if((FALSE === $address)){
+            $this->sendError(103, 'Missing address');
+        }
+        if(!$this->db->isValidAddress($address)){
+            $this->sendError(104, 'Invalid address format');
+        }
+        $maxLimit = is_array($this->defaults) && isset($this->defaults['limit']) ? $this->defaults['limit'] : 10;
+        $limit = max(min(abs((int)$this->getRequest('limit', 10)), $maxLimit), 1);
+        $result = $this->db->getTopTokenHolders($address, $limit);
     }
 
     protected function _getTopByOperationsCount($limit, $period){
