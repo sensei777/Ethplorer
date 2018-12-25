@@ -1118,8 +1118,8 @@ class Ethplorer {
      */
     public function getTokenHolders($address, $limit = FALSE, $offset = FALSE){
         evxProfiler::checkpoint('getTokenHolders', 'START', 'address=' . $address . ', limit=' . $limit . ', offset=' . (is_array($offset) ? print_r($offset, TRUE) : (int)$offset));
-        $cache = 'getTokenHolders-' . $address . '-' . (int)$limit . '-' . (int)$offset;
-        $result = $this->oCache->get($cache, false, true, 120);
+        $cache = 'getTokenHolders-' . md5($address . '-' . (int)$limit . '-' . serialize($offset));
+        $result = $this->oCache->get($cache, false, true, 300);
         if(FALSE === $result){
             $token = $this->getToken($address, true);
             if($token){
