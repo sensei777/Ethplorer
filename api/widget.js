@@ -2140,6 +2140,7 @@ ethplorerWidget.Type['addressPriceHistoryGrouped'] = function(element, options, 
     this.resizeTimer = null;
     this.cachedWidth = $(window).width();
     this.reloadData = false;
+    this.addEthplorerLink = false;
 
     this.options = {
         period: 365,
@@ -2537,17 +2538,33 @@ ethplorerWidget.Type['addressPriceHistoryGrouped'] = function(element, options, 
                 obj.widgetData = data.history;
                 obj.el.find('.txs-loading').remove();
                 obj.drawChart(data.history);
-                if(!obj.reloadData) ethplorerWidget.appendEthplorerLink(obj);
+                if(!obj.reloadData || obj.addEthplorerLink){
+                    ethplorerWidget.appendEthplorerLink(obj);
+                    obj.addEthplorerLink = false;
+                }
                 if('function' === typeof(obj.options.onLoad)){
                     obj.options.onLoad();
                 }
                 if(obj.reloadData) obj.el.fadeOut(250, () => {obj.el.fadeIn(150);});
                 setTimeout(ethplorerWidget.fixTilda, 300);
             }else{
+                if(obj.reloadData){
+                    obj.widgetData = null;
+                    obj.el.html('<div class="txs-loading" style="margin-bottom: 0px !important;margin-top: 0px !important;"></div>');
+                }else{
+                    obj.el.html(obj.templates.loader);
+                }
                 obj.el.find('.txs-loading').text('No data for chart');
-                $('.ethplorer-widget').css('min-height', '1px');
-                $('.txs-loading').css('min-height', '1px');
-                $('.txs-loading').css('padding-top', '10px');
+                if(!obj.reloadData){
+                    $('.ethplorer-widget').css('min-height', '1px');
+                    $('.txs-loading').css('min-height', '1px');
+                    $('.txs-loading').css('padding-top', '10px');
+                }else{
+                    obj.addEthplorerLink = true;
+                    $('.ethplorer-widget').css('height', '300px');
+                    $('.txs-loading').css('height', '300px');
+                    $('.txs-loading').css('padding-top', '80px');
+                }
             }
             obj.reloadData = false;
         };
