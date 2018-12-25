@@ -1118,50 +1118,56 @@ class Ethplorer {
      */
     public function getTokenHolders($address, $limit = FALSE, $offset = FALSE){
         evxProfiler::checkpoint('getTokenHolders', 'START', 'address=' . $address . ', limit=' . $limit . ', offset=' . (is_array($offset) ? print_r($offset, TRUE) : (int)$offset));
-        $result = array();
-        $token = $this->getToken($address);
-        if($token){
-            $search = array('contract' => $address, 'balance' => array('$gt' => 0));
-            if($this->filter){
-                $search = array(
-                    '$and' => array(
-                        $search,
-                        array('address' => array('$regex' => $this->filter)),
-                    )
-                );
-            }
-            $reverseOffset = FALSE;
-            $skip = is_array($offset) ? $offset[0] : $offset;
-            $sortOrder = -1;
-            if(is_array($offset) && ($offset[0] > self::MAX_OFFSET) && ($offset[0] > $offset[1])){
-                $reverseOffset = TRUE;
-                $sortOrder = 1;
-                $skip = $offset[1];
-            }
-            $cursor = $this->oMongo->find('balances', $search, array('balance' => $sortOrder), $limit, $skip);
-            if($cursor){
-                $total = 0;
-                $aBalances = [];
-                foreach($cursor as $balance){
-                    $aBalances[] = $balance;
+        $cache = 'getTokenHolders-' . $address . '-' . (int)$limit . '-' . (int)$offset;
+        $result = $this->oCache->get($cache, false, true, 120);
+        if(FALSE === $result){
+            $token = $this->getToken($address, true);
+            if($token){
+                $search = array('contract' => $address, 'balance' => array('$gt' => 0));
+                if($this->filter){
+                    $search = array(
+                        '$and' => array(
+                            $search,
+                            array('address' => array('$regex' => $this->filter)),
+                        )
+                    );
                 }
-                foreach($aBalances as $balance){
-                    $total += floatval($balance['balance']);
+                $reverseOffset = FALSE;
+                $skip = is_array($offset) ? $offset[0] : $offset;
+                $sortOrder = -1;
+                if(is_array($offset) && ($offset[0] > self::MAX_OFFSET) && ($offset[0] > $offset[1])){
+                    $reverseOffset = TRUE;
+                    $sortOrder = 1;
+                    $skip = $offset[1];
                 }
-                if($total > 0){
-                    if(isset($token['totalSupply']) && ($total < $token['totalSupply'])){
-                        $total = $token['totalSupply'];
+                $cursor = $this->oMongo->find('balances', $search, array('balance' => $sortOrder), $limit, $skip);
+                if($cursor){
+                    $total = 0;
+                    $aBalances = [];
+                    foreach($cursor as $balance){
+                        $aBalances[] = $balance;
                     }
                     foreach($aBalances as $balance){
-                        $result[] = array(
-                            'address' => $balance['address'],
-                            'balance' => floatval($balance['balance']),
-                            'share' => round((floatval($balance['balance']) / $total) * 100, 2)
-                        );
+                        $total += floatval($balance['balance']);
                     }
-                    if($reverseOffset){
-                        $result = array_reverse($result);
+                    if($total > 0){
+                        if(isset($token['totalSupply']) && ($total < $token['totalSupply'])){
+                            $total = $token['totalSupply'];
+                        }
+                        foreach($aBalances as $balance){
+                            $result[] = array(
+                                'address' => $balance['address'],
+                                'balance' => floatval($balance['balance']),
+                                'share' => round((floatval($balance['balance']) / $total) * 100, 2)
+                            );
+                        }
+                        if($reverseOffset){
+                            $result = array_reverse($result);
+                        }
                     }
+                }
+                if(FALSE !== $result){
+                    $this->oCache->save($cache, $result);
                 }
             }
         }
