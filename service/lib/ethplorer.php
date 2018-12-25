@@ -2160,7 +2160,12 @@ class Ethplorer {
      * @return array
      */
     public function getTopTokenHolders($address = FALSE, $limit = 10){
-        return $this->getTokenHolders($address, $limit);
+        $result = array('holders' => array());
+        $holders = $this->getTokenHolders($address, $limit);
+        if(isset($holders['data'])){
+            $result['holders'] = $holders['data'];
+        }
+        return $result;
     }
 
     /**
