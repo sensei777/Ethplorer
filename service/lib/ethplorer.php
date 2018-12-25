@@ -2157,16 +2157,10 @@ class Ethplorer {
      *
      * @param string $address    Address
      * @param int $limit         Maximum records number
-     * @param bool $updateCache  Force unexpired cache update
      * @return array
      */
-    public function getTopTokenHolders($address = FALSE, $limit = 10, $updateCache = FALSE){
-        $cache = 'top_token_holders-' . $address . '-' . $limit;
-        $result = $this->oCache->get($cache, FALSE, TRUE, 300);
-        if($updateCache || (FALSE === $result)){
-            $result = $this->getTokenHolders($address, $limit);
-        }
-        return $result;
+    public function getTopTokenHolders($address = FALSE, $limit = 10){
+        return $this->getTokenHolders($address, $limit);
     }
 
     /**
