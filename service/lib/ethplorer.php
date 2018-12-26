@@ -2369,7 +2369,7 @@ class Ethplorer {
                 $res = $keyData;
             }else{
                 if(isset($keyData[$option])){
-                    $res = $$keyData[$option];
+                    $res = $keyData[$option];
                 }
                 if($key != 'freekey' && isset($this->aSettings['personalLimits'])){
                     foreach($this->aSettings['personalLimits'] as $cmd => $aLimits){
