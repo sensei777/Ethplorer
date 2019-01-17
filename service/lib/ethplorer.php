@@ -2707,6 +2707,46 @@ class Ethplorer {
         return $result;
     }
 
+    public function getAllTokenPrice(){
+        $cache = 'rates';
+        $rates = array();
+        /*$rates = $this->oCache->get($cache, false, true);
+        if(!is_array($rates)){
+            $rates = array();
+        }*/
+        if(isset($this->aSettings['currency'])){
+            $result = $this->_jsonrpcall($this->aSettings['currency'], 'getCurrentPrices', array());
+            if($result && is_array($result)){
+                foreach($result as $aPriceData){
+                    if(isset($aPriceData['address'])){
+                        $address = $aPriceData['address'];
+                        if(isset($this->aSettings['priceSource']) && isset($this->aSettings['priceSource'][$address])){
+                            $address = $this->aSettings['priceSource'][$address];
+                        }
+                        $isHidden = isset($this->aSettings['hidePrice']) && in_array($address, $this->aSettings['hidePrice']);
+                        $knownPrice = isset($this->aSettings['updateRates']) && in_array($address, $this->aSettings['updateRates']);
+
+                        if(!$isHidden && $knownPrice){
+                            $price30d = $this->getTokenPrice30d($address);
+                            if($price30d && $aPriceData['rate']){
+                                $pdiff = $this->_getPDiff($aPriceData['rate'], $price30d);
+                                if($pdiff){
+                                    $aPriceData['diff30d'] = $pdiff;
+                                }
+                            }
+                            unset($aPriceData['address']);
+                            $rates[$address] = $aPriceData;
+                        }
+                    }
+                }
+                if(is_array($rates) && sizeof($rates)){
+                    //$this->oCache->save($cache, $rates);
+                }
+            }
+        }
+        return $rates;
+    }
+
     public function getTokenPriceHistory($address, $period = 0, $type = 'hourly', $updateCache = FALSE, $updateFullHistory = FALSE){
         if(isset($this->aSettings['priceSource']) && isset($this->aSettings['priceSource'][$address])){
             $address = $this->aSettings['priceSource'][$address];
