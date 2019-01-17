@@ -2709,11 +2709,10 @@ class Ethplorer {
 
     public function getAllTokenPrice(){
         $cache = 'rates';
-        $rates = array();
-        /*$rates = $this->oCache->get($cache, false, true);
+        $rates = $this->oCache->get($cache, false, true);
         if(!is_array($rates)){
             $rates = array();
-        }*/
+        }
         if(isset($this->aSettings['currency'])){
             $result = $this->_jsonrpcall($this->aSettings['currency'], 'getCurrentPrices', array());
             if($result && is_array($result)){
@@ -2740,7 +2739,7 @@ class Ethplorer {
                     }
                 }
                 if(is_array($rates) && sizeof($rates)){
-                    //$this->oCache->save($cache, $rates);
+                    $this->oCache->save($cache, $rates);
                 }
             }
         }
