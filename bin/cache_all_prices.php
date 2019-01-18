@@ -22,7 +22,7 @@ $startTime = microtime(TRUE);
 echo "\n[".date("Y-m-d H:i:s")."], Started.";
 
 $es = Ethplorer::db($aConfig);
-$lock = $es->createProcessLock('all.prices.lock', 500);
+$lock = $es->createProcessLock('all.prices.lock', 180);
 $es->getCache()->clearLocalCache();
 $result = $es->getAllTokenPrice();
 // get THBEX price
