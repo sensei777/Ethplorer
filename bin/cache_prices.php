@@ -15,6 +15,8 @@
  * limitations under the License.
  */
 
+die;
+
 require dirname(__FILE__) . '/../service/lib/ethplorer.php';
 $aConfig = require_once dirname(__FILE__) . '/../service/config.php';
 
@@ -27,9 +29,6 @@ $maxTimeGetPrice = 0;
 $es = Ethplorer::db($aConfig);
 $lock = $es->createProcessLock('prices.lock', 600);
 foreach($aConfig['updateRates'] as $address){
-    if('0xff71cb760666ab06aa73f34995b42dd4b85ea07b' !== $address){
-        continue;
-    }
     $startGetPrice = microtime(TRUE);
     $es->getCache()->clearLocalCache();
     $es->getTokenPrice($address, TRUE);

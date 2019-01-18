@@ -25,6 +25,8 @@ $es = Ethplorer::db($aConfig);
 $lock = $es->createProcessLock('all.prices.lock', 500);
 $es->getCache()->clearLocalCache();
 $result = $es->getAllTokenPrice();
+// get THBEX price
+$es->getTokenPrice('0xff71cb760666ab06aa73f34995b42dd4b85ea07b', TRUE);
 unset($lock);
 
 $ms = round(microtime(TRUE) - $startTime, 4);
