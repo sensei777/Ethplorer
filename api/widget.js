@@ -2241,6 +2241,7 @@ ethplorerWidget.Type['addressPriceHistoryGrouped'] = function(element, options, 
                 for(var i = widgetData['prices'][token].length - 1; i >= 0; i--){
                     var priceData = widgetData['prices'][token][i];
                     if(priceData['average'] > 0) lastAverage = priceData['average'];
+                    else if(priceData['rate'] > 0) lastAverage = priceData['rate'];
                     aPrices[token][priceData['date']] = lastAverage;
                 }
             }
