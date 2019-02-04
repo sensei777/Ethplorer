@@ -70,6 +70,10 @@ class ethplorerController {
         'OVER_LIMIT' => [
             'code' => 116,
             'message' => 'Pool capacity limit reached'
+        ],
+        'ADDRESS_NOT_TOKEN' => [
+            'code' => 117,
+            'message' => 'Not a token address'
         ]
     ];
 
@@ -480,6 +484,11 @@ class ethplorerController {
         }
         if(!$this->db->isValidAddress($address)){
             $this->sendError(104, 'Invalid address format');
+        }
+        $token = $this->getToken($address, true);
+        if(!$token){
+            $rpcError = $this->APIErrors['ADDRESS_NOT_TOKEN'];
+            $this->sendError($rpcError['code'], $rpcError['message'], 400);
         }
         $maxLimit = is_array($this->defaults) && isset($this->defaults['limit']) ? $this->defaults['limit'] : 100;
         $limit = max(min(abs((int)$this->getRequest('limit', 10)), $maxLimit), 1);
