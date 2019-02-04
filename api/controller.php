@@ -485,7 +485,7 @@ class ethplorerController {
         if(!$this->db->isValidAddress($address)){
             $this->sendError(104, 'Invalid address format');
         }
-        $token = $this->getToken($address, true);
+        $token = $this->db->getToken($address, true);
         if(!$token){
             $rpcError = $this->APIErrors['ADDRESS_NOT_TOKEN'];
             $this->sendError($rpcError['code'], $rpcError['message'], 400);
