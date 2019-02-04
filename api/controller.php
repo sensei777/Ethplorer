@@ -824,7 +824,7 @@ class ethplorerController {
         if($timestamp > 0){
             $maxPeriod = is_array($this->defaults) && isset($this->defaults['maxPeriod']) ? $this->defaults['maxPeriod'] : 2592000;
             if((time() - $timestamp) > $maxPeriod){
-                $this->sendError(108, 'Invalid timestamp');
+                $this->sendError(108, 'Invalid timestamp ' . $maxPeriod);
             }
             return $timestamp;
         }
