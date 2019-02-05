@@ -480,10 +480,10 @@ class ethplorerController {
         $address = $this->getParam(0, '');
         $address = strtolower($address);
         if((FALSE === $address)){
-            $this->sendError(103, 'Missing address');
+            $this->sendError(103, 'Missing address', 400);
         }
         if(!$this->db->isValidAddress($address)){
-            $this->sendError(104, 'Invalid address format');
+            $this->sendError(104, 'Invalid address format', 400);
         }
         $token = $this->db->getToken($address, true);
         if(!$token){
