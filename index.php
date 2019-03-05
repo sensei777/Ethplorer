@@ -48,6 +48,7 @@ if(3 === count($rParts)){
         $address = $rParts[2];
         $error = FALSE;
         $aAddressInfo = $es->getAddressInfo($rParts[2]);
+        $checksumAddress = $es->getChecksumAddress($rParts[2]);
         if(isset($aAddressInfo['token'])){
             if(isset($aAddressInfo['token']['symbol'])){
                 $title .= '[' . $aAddressInfo['token']['symbol'] . ']';
@@ -62,8 +63,12 @@ if(3 === count($rParts)){
             if(isset($aAddressInfo['token']['price']) && isset($aAddressInfo['token']['price']['rate'])){
                 $title .= ' and price chart';
             }
-            $title .= ' - Ethereum contract address ' . $es->getChecksumAddress($rParts[2]) . ' | Ethplorer';
+            $title .= ' - Ethereum contract address ' . $checksumAddress . ' | Ethplorer';
             $aAddressInfo['title'] = $title;
+        }else if(isset($aAddressInfo['contract'])){
+            $title .= $checksumAddress . ' - ethereum contract explorer - Ethplorer';
+        }else{
+            $title .= $checksumAddress . ' - ethereum address history, charts and balances explorer - Ethplorer';
         }
     }
     if(('token' === $rParts[1]) && $es->isValidAddress($rParts[2])){
