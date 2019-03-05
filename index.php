@@ -16,7 +16,7 @@
  */
 $aConfig = require dirname(__FILE__) . '/service/config.php';
 require dirname(__FILE__) . '/service/lib/ethplorer.php';
-$es = Ethplorer::db(array($aConfig));
+$es = Ethplorer::db($aConfig);
 
 $codeVersion = isset($aConfig['codeVersion']) ? $aConfig['codeVersion'] : "217";
 
