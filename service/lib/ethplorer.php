@@ -370,6 +370,19 @@ class Ethplorer {
     }
 
     /**
+     * Returns address info.
+     *
+     * @param string $address
+     * @return array
+     */
+    public function getAddressInfo($address){
+        evxProfiler::checkpoint('getAddressInfo', 'START', 'address=' . $address);
+        $result = $this->getAddressDetails($address, 0);
+        evxProfiler::checkpoint('getAddressInfo', 'FINISH');
+        return $result;
+    }
+
+    /**
      * Returns advanced address details.
      *
      * @param string $address
@@ -410,6 +423,7 @@ class Ethplorer {
                 $result["token"] = $token;
             }
         }
+        if($limit === 0) return $result;
         if($result['isContract'] && isset($result['token'])){
             $result['pager'] = array('pageSize' => $limit);
             foreach(array('transfers', 'issuances', 'holders') as $type){

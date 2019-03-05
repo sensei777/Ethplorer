@@ -22,6 +22,7 @@ $codeVersion = isset($aConfig['codeVersion']) ? $aConfig['codeVersion'] : "217";
 
 $error = TRUE;
 $header = "";
+$aAddressInfo = array();
 $uri = $_SERVER['REQUEST_URI'];
 
 // Uri to lowercase
@@ -45,6 +46,7 @@ if(3 === count($rParts)){
         $header = "Address: " . $rParts[2];
         $address = $rParts[2];
         $error = FALSE;
+        $aAddressInfo = $es->getAddressInfo($rParts[2]);
     }
     if(('token' === $rParts[1]) && $es->isValidAddress($rParts[2])){
         $header = "Token address: " . $rParts[2];
@@ -94,10 +96,14 @@ $csvExport = '';
 if(is_array($rParts) && isset($rParts[2])){
     $csvExport = ' <span class="export-csv-spinner"><i class="fa fa-spinner fa-spin"></i> Export...</span><span class="export-csv"><a class="download" rel="nofollow" target="_blank" href="/service/exportcsv.php?data=' . $rParts[2] . '">Export as CSV</a></span>';
 }
+$title = 'Ethplorer';
+if($header){
+    $title .= ": " . $header;
+}
 ?><!DOCTYPE html>
 <html>
 <head>
-    <title>Ethplorer<?php if($header){ echo ": " . $header; } ?></title>
+    <title><?=$title?></title>
     <link rel="stylesheet" href="https://ajax.googleapis.com/ajax/libs/jqueryui/1.11.4/themes/smoothness/jquery-ui.css">
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.0.13/css/all.css" integrity="sha384-DNOHZ68U8hZfKXOrtjWvjxusGo9WQnrNx2sqG0tfsghAvtVlRW3tvkXWZh58N9jp" crossorigin="anonymous">
