@@ -1155,7 +1155,7 @@ Ethplorer = {
             Ethplorer.drawTransfers(srcAddress, data);
         }
 
-        if(data.isContract && data.token){
+        if(data.token){
         }else{
             document.title = 'Ethplorer';
             document.title += (': ' + (titleAdd ? (titleAdd + ' -') : ''));

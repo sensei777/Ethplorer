@@ -53,7 +53,11 @@ if(3 === count($rParts)){
                 $title .= '[' . $aAddressInfo['token']['symbol'] . ']';
             }
             if(isset($aAddressInfo['token']['name'])){
-                $title .= ' ' . $aAddressInfo['token']['name'] . ' Token viewer';
+                $title .= ' ' . $aAddressInfo['token']['name'];
+                if(strpos($aAddressInfo['token']['name'], ' Token') === false){
+                    $title .= ' Token';
+                }
+                $title .= ' viewer';
             }
             if(isset($aAddressInfo['token']['price']) && isset($aAddressInfo['token']['price']['rate'])){
                 $title .= ' and price chart';
