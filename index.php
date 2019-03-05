@@ -24,6 +24,7 @@ $error = TRUE;
 $header = "";
 $aAddressInfo = array();
 $uri = $_SERVER['REQUEST_URI'];
+$title = '';
 
 // Uri to lowercase
 if(preg_match("/[A-Z]+/", $uri) && (FALSE === strpos($uri, '1dea4'))){
@@ -47,6 +48,19 @@ if(3 === count($rParts)){
         $address = $rParts[2];
         $error = FALSE;
         $aAddressInfo = $es->getAddressInfo($rParts[2]);
+        if(isset($aAddressInfo['token'])){
+            if(isset($aAddressInfo['token']['symbol'])){
+                $title .= '[' . $aAddressInfo['token']['symbol'] . ']';
+            }
+            if(isset($aAddressInfo['token']['name'])){
+                $title .= ' ' . $aAddressInfo['token']['name'] . ' Token viewer';
+            }
+            if(isset($aAddressInfo['token']['price']) && isset($aAddressInfo['token']['price']['rate'])){
+                $title .= ' and price chart';
+            }
+            $title .= ' - Ethereum contract address ' . $es->getChecksumAddress($rParts[2]) . ' | Ethplorer';
+            $aAddressInfo['title'] = $title;
+        }
     }
     if(('token' === $rParts[1]) && $es->isValidAddress($rParts[2])){
         $header = "Token address: " . $rParts[2];
@@ -96,9 +110,11 @@ $csvExport = '';
 if(is_array($rParts) && isset($rParts[2])){
     $csvExport = ' <span class="export-csv-spinner"><i class="fa fa-spinner fa-spin"></i> Export...</span><span class="export-csv"><a class="download" rel="nofollow" target="_blank" href="/service/exportcsv.php?data=' . $rParts[2] . '">Export as CSV</a></span>';
 }
-$title = 'Ethplorer';
-if($header){
-    $title .= ": " . $header;
+if(!$title){
+    $title = 'Ethplorer';
+    if($header){
+        $title .= ": " . $header;
+    }
 }
 ?><!DOCTYPE html>
 <html>

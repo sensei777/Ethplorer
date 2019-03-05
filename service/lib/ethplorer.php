@@ -22,6 +22,7 @@ require_once __DIR__ . '/mongo_pools.php';
 require_once __DIR__ . '/profiler.php';
 require_once __DIR__ . '/lock.php';
 require_once __DIR__ . '/../../vendor/autoload.php';
+require_once __DIR__ . '/../sha3.php';
 
 use \Litipk\BigNumbers\Decimal as Decimal;
 
@@ -3341,6 +3342,21 @@ class Ethplorer {
         }
         evxProfiler::checkpoint('getPoolLastOperations', 'FINISH');
         return $aOps;
+    }
+
+    public function getChecksumAddress($address){
+        $address = str_replace("0x", "", strtolower($address));
+        $hash = Sha3::hash($address, 256);
+        $res = '0x';
+
+        for($i = 0; $i < strlen($address); $i++){
+            if(intval($hash[$i], 16) >= 8){
+                $res .= strtoupper($address[$i]);
+            }else{
+                $res .= $address[$i];
+            }
+        }
+        return $res;
     }
 
     protected function _getRateByTimestamp($address, $timestamp){

@@ -1155,9 +1155,12 @@ Ethplorer = {
             Ethplorer.drawTransfers(srcAddress, data);
         }
 
-        document.title = 'Ethplorer';
-        document.title += (': ' + (titleAdd ? (titleAdd + ' -') : ''));
-        document.title += ((data.isContract ? ' Ethereum contract ' : ' Ethereum address ') + Ethplorer.currentAddress);
+        if(data.isContract && data.token){
+        }else{
+            document.title = 'Ethplorer';
+            document.title += (': ' + (titleAdd ? (titleAdd + ' -') : ''));
+            document.title += ((data.isContract ? ' Ethereum contract ' : ' Ethereum address ') + Ethplorer.currentAddress);
+        }
 
         Ethplorer.Events.fire('ethp_showAddressDetails_finish', data);
 
