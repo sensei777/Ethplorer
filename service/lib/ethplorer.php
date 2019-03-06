@@ -702,12 +702,25 @@ class Ethplorer {
     }
 
     /**
+     * Returns transaction data.
+     *
+     * @param string  $hash  Transaction hash
+     * @return array
+     */
+    public function getTransactionInfo($hash){
+        evxProfiler::checkpoint('getTransactionInfo', 'START', 'hash=' . $hash);
+        $result = $this->getTransactionDetails($hash, TRUE);
+        evxProfiler::checkpoint('getTransactionInfo', 'FINISH');
+        return $result;
+    }
+
+    /**
      * Returns advanced transaction data.
      *
      * @param string  $hash  Transaction hash
      * @return array
      */
-    public function getTransactionDetails($hash){
+    public function getTransactionDetails($hash, $fast = FALSE){
         evxProfiler::checkpoint('getTransactionDetails', 'START', 'hash=' . $hash);
         $cache = 'tx-' . $hash;
         $result = $this->oCache->get($cache, false, true);
@@ -718,6 +731,7 @@ class Ethplorer {
                 "tx" => $tx,
                 "contracts" => array()
             );
+            if(false === $tx && $fast) return array();
 
             // if transaction is not mained trying get it from pedding pool
             if(false === $tx){

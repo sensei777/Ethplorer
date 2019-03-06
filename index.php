@@ -23,6 +23,7 @@ $codeVersion = isset($aConfig['codeVersion']) ? $aConfig['codeVersion'] : "217";
 $error = TRUE;
 $header = "";
 $aAddressInfo = array();
+$aTxInfo = array();
 $uri = $_SERVER['REQUEST_URI'];
 $title = '';
 
@@ -42,6 +43,7 @@ if(3 === count($rParts)){
     if(('tx' === $rParts[1]) && $es->isValidTransactionHash($rParts[2])){
         $header = "Transaction hash: " . $rParts[2];
         $error = FALSE;
+        $aTxInfo = $es->getTransactionInfo($rParts[2]);
     }
     if(('address' === $rParts[1]) && $es->isValidAddress($rParts[2])){
         $header = "Address: " . $rParts[2];
