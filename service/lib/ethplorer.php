@@ -710,6 +710,15 @@ class Ethplorer {
     public function getTransactionInfo($hash){
         evxProfiler::checkpoint('getTransactionInfo', 'START', 'hash=' . $hash);
         $result = $this->getTransactionDetails($hash, TRUE);
+        if(isset($result['operations']) && is_array($result['operations']) && sizeof($result['operations']) && isset($result['operations'][0]['value'])){
+            if(isset($result['operations'][0]['token']) && isset($result['operations'][0]['token']['decimals'])){
+                $ten = Decimal::create(10);
+                $dec = $result['operations'][0]['token']['decimals'];
+                $value = Decimal::create($result['operations'][0]['value']);
+                $value = $value->div($ten->pow($dec), 2);
+                $result['opValue'] = $value;
+            }
+        }
         evxProfiler::checkpoint('getTransactionInfo', 'FINISH');
         return $result;
     }
