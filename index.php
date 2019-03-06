@@ -18,7 +18,7 @@ $aConfig = require dirname(__FILE__) . '/service/config.php';
 require dirname(__FILE__) . '/service/lib/ethplorer.php';
 $es = Ethplorer::db($aConfig);
 
-$codeVersion = isset($aConfig['codeVersion']) ? $aConfig['codeVersion'] : "217";
+$codeVersion = isset($aConfig['codeVersion']) ? $aConfig['codeVersion'] : "220";
 
 $error = TRUE;
 $header = "";
@@ -44,6 +44,20 @@ if(3 === count($rParts)){
         $header = "Transaction hash: " . $rParts[2];
         $error = FALSE;
         $aTxInfo = $es->getTransactionInfo($rParts[2]);
+        if(isset($aTxInfo['token']) && isset($aTxInfo['token']['name'])){
+            $title .= $aTxInfo['token']['name'] . ' token transfer';
+            if(isset($aTxInfo['opValue'])){
+                $title .= ' for ' . $aTxInfo['opValue'];
+            }
+            if(isset($aTxInfo['token']['symbol'])){
+                $title .= ' [' . $aTxInfo['token']['symbol'] . ']';
+            }
+            $title .= ' - ' . $rParts[2] . ' - transaction hash | by Ethplorer';
+        }else if(isset($aTxInfo['tx']) && isset($aTxInfo['tx']['value'])){
+            $title .= 'Ethereum transaction for ' . $aTxInfo['tx']['value'] . ' [ETH] - ' . $rParts[2] . ' - transaction hash | by Ethplorer';
+        }
+        $aTxInfo['title'] = $title;
+        $title = '';
     }
     if(('address' === $rParts[1]) && $es->isValidAddress($rParts[2])){
         $header = "Address: " . $rParts[2];

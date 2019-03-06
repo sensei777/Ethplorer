@@ -445,7 +445,7 @@ Ethplorer = {
             $('#txTokenStatus').html(oOperation.success ? 'Success' : 'Failed' + (oOperation.failedReason ? (': ' + Ethplorer.getTxErrorReason(oOperation.failedReason)) : ''));
             $('#operation-status').addClass(oOperation.success ? 'green' : 'red');
         }
-        document.title = 'Ethplorer: ' + (titleAdd ? (titleAdd + ' -') : '');
+        //document.title = 'Ethplorer: ' + (titleAdd ? (titleAdd + ' -') : '');
         Ethplorer.Utils.hideEmptyFields();
     },
     showTxDetails: function(txHash, txData){
@@ -798,9 +798,9 @@ Ethplorer = {
             $('.tx-details-close').hide();
         }
 
-        document.title = 'Ethplorer';
-        document.title += (': ' + (titleAdd ? (titleAdd + ' -') : ''));
-        document.title += (' hash ' + txHash);
+        //document.title = 'Ethplorer';
+        //document.title += (': ' + (titleAdd ? (titleAdd + ' -') : ''));
+        //document.title += (' hash ' + txHash);
 
         var idx = Ethplorer.Nav.get('opIdx');
         if(false !== idx){
