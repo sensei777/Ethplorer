@@ -56,8 +56,6 @@ if(3 === count($rParts)){
         }else if(isset($aTxInfo['tx']) && isset($aTxInfo['tx']['value'])){
             $title .= 'Ethereum transaction for ' . $aTxInfo['tx']['value'] . ' [ETH] - ' . $rParts[2] . ' - transaction hash | by Ethplorer';
         }
-        $aTxInfo['title'] = $title;
-        $title = '';
     }
     if(('address' === $rParts[1]) && $es->isValidAddress($rParts[2])){
         $header = "Address: " . $rParts[2];
