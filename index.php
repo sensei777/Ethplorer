@@ -28,7 +28,7 @@ $uri = $_SERVER['REQUEST_URI'];
 $title = '';
 
 // Uri to lowercase
-if(preg_match("/[A-Z]+/", $uri) && (FALSE === strpos($uri, '1dea4'))){
+if(preg_match("/0x[A-Z]+/", $uri) && (FALSE === strpos($uri, '1dea4'))){
     header("Location: " . strtolower($uri));
     die();
 }
@@ -91,6 +91,7 @@ if(3 === count($rParts)){
     }
 }
 if($error){
+    header('HTTP/1.0 404 Not Found', true, 404);
     if(isset($rParts[1]) && !$rParts[1]){
         header('Location:/');
         die();
