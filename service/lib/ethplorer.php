@@ -2816,14 +2816,10 @@ class Ethplorer {
                 if($lastTS && !$updateFullHistory) $params[] = $lastTS + 1;
                 $res = $this->_jsonrpcall($this->aSettings['currency'], $method, $params);
                 if(FALSE !== $result){
-                    if($indTmpHistory < 0){
-                        $result = array_merge($result, $res);
-                    }else{
-                        if(is_array($res) && sizeof($res) && isset($res[0]['average']) && $res[0]['average']){
-                            array_splice($result, $indTmpHistory);
-                            $result = array_merge($result, $res);
-                        }
+                    if($indTmpHistory >= 0){
+                        array_splice($result, $indTmpHistory);
                     }
+                    $result = array_merge($result, $res);
                 }else{
                     $result = $res;
                 }
