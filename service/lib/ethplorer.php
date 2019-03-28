@@ -2799,27 +2799,31 @@ class Ethplorer {
         $result = $this->oCache->get($cache, false, true);
         if($updateCache || (FALSE === $result)){
             $lastTS = 0;
-            $lastDate = FALSE;
-            $skipGetHistory = FALSE;
+            $indTmpHistory = -1;
             if(FALSE !== $result){
                 for($i = 0; $i < count($result); $i++){
-                    if($result[$i]['ts'] > $lastTS){
+                    if(!isset($result[$i]['tmp']) && $result[$i]['ts'] > $lastTS){
                         $lastTS = $result[$i]['ts'];
-                        $lastDate = $result[$i]['date'];
+                    }
+                    if(isset($result[$i]['tmp']) && $indTmpHistory < 0){
+                        $indTmpHistory = $i;
                     }
                 }
-                $prevDate = gmdate("Y-m-d", time() - (24 * 60 * 60));
-                if($lastDate && ($lastDate === $prevDate)){
-                    $skipGetHistory = TRUE;
-                }
             }
-            if(isset($this->aSettings['currency']) && (!$skipGetHistory || $updateFullHistory)){
+            if(isset($this->aSettings['currency'])){
                 $method = 'getCurrencyHistory';
                 $params = array($address, 'USD');
                 if($lastTS && !$updateFullHistory) $params[] = $lastTS + 1;
                 $res = $this->_jsonrpcall($this->aSettings['currency'], $method, $params);
                 if(FALSE !== $result){
-                    $result = array_merge($result, $res);
+                    if($indTmpHistory < 0){
+                        $result = array_merge($result, $res);
+                    }else{
+                        if(is_array($res) && sizeof($res) && isset($res[0]['average']) && $res[0]['average']){
+                            array_splice($result, $indTmpHistory);
+                            $result = array_merge($result, $res);
+                        }
+                    }
                 }else{
                     $result = $res;
                 }
