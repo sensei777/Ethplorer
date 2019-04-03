@@ -2928,7 +2928,7 @@ class Ethplorer {
                             $prevVol = $aDailyRecord['volume'];
                             $prevVolC = $aDailyRecord['volumeConverted'];                        
                         }
-                        $curDate = $aPriceHistory[$i]['date'];
+                        $curDate = $result[$i]['date'];
                     }
                     $this->log('redis', "getTokenPriceHistory:  " . $address . ' records: ' . sizeof($aPriceHistoryDaily), TRUE);
                     $this->oCache->save($cache, $aPriceHistoryDaily);
