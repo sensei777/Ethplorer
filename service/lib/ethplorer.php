@@ -2801,7 +2801,7 @@ class Ethplorer {
         return $rates;
     }
 
-    public function getTokenPriceHistory($address, $period = 0, $type = 'hourly', $updateCache = FALSE, $updateFullHistory = FALSE){
+    public function getTokenPriceHistory($address, $period = 0, $type = 'daily', $updateCache = FALSE, $updateFullHistory = FALSE){
         if(isset($this->aSettings['priceSource']) && isset($this->aSettings['priceSource'][$address])){
             $address = $this->aSettings['priceSource'][$address];
         }
@@ -2811,8 +2811,7 @@ class Ethplorer {
             return FALSE;
         }
         evxProfiler::checkpoint('getTokenPriceHistory', 'START', 'address=' . $address . ', period=' . $period . ', type=' . $type);
-        $rates = array();
-        $cache = 'rates-history-' . /*($period > 0 ? ('period-' . $period . '-') : '' ) . ($type != 'hourly' ? $type . '-' : '') .*/ $address;
+        $cache = 'rates-history-' . $address;
         $result = $this->oCache->get($cache, false, true);
         if($updateCache || (FALSE === $result)){
             $lastTS = 0;
@@ -2830,16 +2829,16 @@ class Ethplorer {
             if(isset($this->aSettings['currency'])){
                 $method = 'getCurrencyHistory';
                 $params = array($address, 'USD');
-                if($lastTS && !$updateFullHistory) $params[] = $lastTS + 1;
-                $res = $this->_jsonrpcall($this->aSettings['currency'], $method, $params);
-                if(FALSE !== $result){
+                //if($lastTS && !$updateFullHistory) $params[] = $lastTS + 1;
+                $result = $this->_jsonrpcall($this->aSettings['currency'], $method, $params);
+                /*if(FALSE !== $result){
                     if($indTmpHistory >= 0){
                         array_splice($result, $indTmpHistory);
                     }
                     $result = array_merge($result, $res);
                 }else{
                     $result = $res;
-                }
+                }*/
                 if($result){
                     $aToken = $this->getToken($address);
                     $tokenStartAt = false;
@@ -2884,79 +2883,77 @@ class Ethplorer {
                             }
                         }
                     }
-                }
-                $this->oCache->save($cache, $result);
-            }
-        }
-        if($result){
-            $aPriceHistory = array();
-            if($period){
-                $tsStart = gmmktime(0, 0, 0, date('n'), date('j') - $period, date('Y'));
-                for($i = 0; $i < count($result); $i++){
-                    if($result[$i]['ts'] < $tsStart){
-                        continue;
-                    }
-                    $aPriceHistory[] = $result[$i];
-                }
-            }else{
-                $aPriceHistory = $result;
-            }
-            if($type == 'daily'){
-                $aPriceHistoryDaily = array();
-                $aDailyRecord = array();
-                $curDate = '';
-                $prevVol = 0;
-                $prevVolC = 0;
-                for($i = 0; $i < count($aPriceHistory); $i++){
-                    $firstRecord = false;
-                    $lastRecord = false;
-                    if(!$curDate || ($curDate != $aPriceHistory[$i]['date'])){
-                        $aDailyRecord = $aPriceHistory[$i];
-                        $firstRecord = true;
-                    }
-                    if(($i == (count($aPriceHistory) - 1)) || ($aPriceHistory[$i]['date'] != $aPriceHistory[$i + 1]['date'])){
-                        $lastRecord = true;
+
+                    $aPriceHistoryDaily = array();
+                    $aDailyRecord = array();
+                    $curDate = '';
+                    $prevVol = 0;
+                    $prevVolC = 0;
+                    for($i = 0; $i < count($aPriceHistory); $i++){
+                        $firstRecord = false;
+                        $lastRecord = false;
+                        if(!$curDate || ($curDate != $aPriceHistory[$i]['date'])){
+                            $aDailyRecord = $aPriceHistory[$i];
+                            $firstRecord = true;
+                        }
+                        if(($i == (count($aPriceHistory) - 1)) || ($aPriceHistory[$i]['date'] != $aPriceHistory[$i + 1]['date'])){
+                            $lastRecord = true;
+                            if($lastRecord){
+                                $aDailyRecord['close'] = $aPriceHistory[$i]['close'];
+                            }
+                        }
+                        if(!$firstRecord){
+                            if($aPriceHistory[$i]['high'] > $aDailyRecord['high']){
+                                $aDailyRecord['high'] = $aPriceHistory[$i]['high'];
+                            }
+                            if($aPriceHistory[$i]['low'] < $aDailyRecord['low']){
+                                $aDailyRecord['low'] = $aPriceHistory[$i]['low'];
+                            }
+                            $aDailyRecord['volume'] += $aPriceHistory[$i]['volume'];
+                            $aDailyRecord['volumeConverted'] += $aPriceHistory[$i]['volumeConverted'];
+                        }
                         if($lastRecord){
-                            $aDailyRecord['close'] = $aPriceHistory[$i]['close'];
+                            // If volume goes up more than 10 mln times, we suppose it was a bug
+                            if($prevVol && (($aDailyRecord['volume'] / $prevVol) > 1000000)){
+                                $aDailyRecord['volume'] = $prevVol;
+                            }
+                            if($prevVolC && (($aDailyRecord['volumeConverted'] / $prevVolC) > 1000000)){
+                                $aDailyRecord['volumeConverted'] = $prevVolC;
+                            }
+                            if($aDailyRecord['volume'] && $aDailyRecord['volumeConverted']){
+                                $aDailyRecord['average'] = $aDailyRecord['volumeConverted'] / $aDailyRecord['volume'];
+                            }
+                            if(!isset($aDailyRecord['average'])) $aDailyRecord['average'] = 0;
+                            $aPriceHistoryDaily[] = $aDailyRecord;
+                            $prevVol = $aDailyRecord['volume'];
+                            $prevVolC = $aDailyRecord['volumeConverted'];                        
                         }
+                        $curDate = $aPriceHistory[$i]['date'];
                     }
-                    if(!$firstRecord){
-                        if($aPriceHistory[$i]['high'] > $aDailyRecord['high']){
-                            $aDailyRecord['high'] = $aPriceHistory[$i]['high'];
-                        }
-                        if($aPriceHistory[$i]['low'] < $aDailyRecord['low']){
-                            $aDailyRecord['low'] = $aPriceHistory[$i]['low'];
-                        }
-                        $aDailyRecord['volume'] += $aPriceHistory[$i]['volume'];
-                        $aDailyRecord['volumeConverted'] += $aPriceHistory[$i]['volumeConverted'];
-                        // $aDailyRecord['average'] = $aDailyRecord['volume'] ? ($aDailyRecord['volumeConverted'] / $aDailyRecord['volume']) : 0;
-                    }
-                    if($lastRecord){
-                        // If volume goes up more than 10 mln times, we suppose it was a bug
-                        if($prevVol && (($aDailyRecord['volume'] / $prevVol) > 1000000)){
-                            $aDailyRecord['volume'] = $prevVol;
-                        }
-                        if($prevVolC && (($aDailyRecord['volumeConverted'] / $prevVolC) > 1000000)){
-                            $aDailyRecord['volumeConverted'] = $prevVolC;
-                        }
-                        if($aDailyRecord['volume'] && $aDailyRecord['volumeConverted']){
-                            $aDailyRecord['average'] = $aDailyRecord['volumeConverted'] / $aDailyRecord['volume'];
-                        }
-                        if(!isset($aDailyRecord['average'])) $aDailyRecord['average'] = 0;
-                        $aPriceHistoryDaily[] = $aDailyRecord;
-                        $prevVol = $aDailyRecord['volume'];
-                        $prevVolC = $aDailyRecord['volumeConverted'];                        
-                    }
-                    $curDate = $aPriceHistory[$i]['date'];
+                    $this->log('redis', "getTokenPriceHistory:  " . $address . ' records: ' . sizeof($aPriceHistoryDaily), TRUE);
+                    $this->oCache->save($cache, $aPriceHistoryDaily);
                 }
             }
-            $rates[$address] = ($type == 'daily' ? $aPriceHistoryDaily : $aPriceHistory);
         }
-        if(is_array($rates) && isset($rates[$address])){
-            $result = $rates[$address];
+        if(is_array($aPriceHistoryDaily) && sizeof($aPriceHistoryDaily)){
+            $result = $aPriceHistoryDaily;
         }
+
+        $aPriceHistory = array();
+        if($period){
+            $dateStart = date("Y-m-d", time() - $period * 24 * 3600);
+            for($i = 0; $i < count($result); $i++){
+                if($result[$i]['date'] < $dateStart){
+                    continue;
+                }
+                $aPriceHistory[] = $result[$i];
+            }
+        }else{
+            $aPriceHistory = $result;
+        }
+
         evxProfiler::checkpoint('getTokenPriceHistory', 'FINISH');
-        return $result;
+        return $aPriceHistory;
     }
 
     public function getTokenCapHistory($period = 0, $updateCache = FALSE){
