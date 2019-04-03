@@ -1956,12 +1956,29 @@ class Ethplorer {
                         $aToken['cap-' . $period . 'd-previous'] = 0;
                         $aToken['cap-' . $period . 'd-previous-ts'] = 0;
                     }
-                    $aHistory = $this->getTokenPriceHistory($address, 60, 'hourly');
-                    if(is_array($aHistory)){
-                        //$previousTokenCapAdded = false;
+                    $aHistory = $this->getTokenPriceHistory($address, 60, 'daily');
+                    $aHourlyHistory = array();
+                    foreach($aHistory as $aHistRecord){
+                        for($i = 0; $i < 24; $i++){
+                            $aHourlyHistory[] = array(
+                                'ts' => $aHistRecord['ts'] + (3600 * $i),
+                                'date' => $aHistRecord['date'],
+                                'hour' => $i,
+                                'open' => $aHistRecord['open'],
+                                'close' => $aHistRecord['close'],
+                                'high' => $aHistRecord['high'],
+                                'low' => $aHistRecord['low'],
+                                'volume' => $aHistRecord['volume'] / 24,
+                                'volumeConverted' => $aHistRecord['volumeConverted'] / 24,
+                                'cap' => $aHistRecord['cap'],
+                                'average' => $aHistRecord['average']
+                            );
+                        }
+                    }
+                    if(is_array($aHourlyHistory)){
                         $prevDayCap = null;
                         $prevPrevDayCap = null;
-                        foreach($aHistory as $aRecord){
+                        foreach($aHourlyHistory as $aRecord){
                             foreach($aPeriods as $aPeriod){
                                 $period = $aPeriod['period'];
                                 $inCurrentPeriod = ($aRecord['date'] > $aPeriod['currentPeriodStart']) || (($aRecord['date'] == $aPeriod['currentPeriodStart']) && ($aRecord['hour'] >= $curHour ));
