@@ -2813,8 +2813,8 @@ class Ethplorer {
         evxProfiler::checkpoint('getTokenPriceHistory', 'START', 'address=' . $address . ', period=' . $period . ', type=' . $type);
         $cache = 'rates-history-' . $address;
         $result = $this->oCache->get($cache, false, true);
-        if($updateCache || (FALSE === $result)){
-            $lastTS = 0;
+        if($updateCache){
+            /*$lastTS = 0;
             $indTmpHistory = -1;
             if(FALSE !== $result){
                 for($i = 0; $i < count($result); $i++){
@@ -2825,7 +2825,7 @@ class Ethplorer {
                         $indTmpHistory = $i;
                     }
                 }
-            }
+            }*/
             if(isset($this->aSettings['currency'])){
                 $method = 'getCurrencyHistory';
                 $params = array($address, 'USD');
@@ -2935,12 +2935,13 @@ class Ethplorer {
                 }
             }
         }
-        if(is_array($aPriceHistoryDaily) && sizeof($aPriceHistoryDaily)){
+        if(isset($aPriceHistoryDaily) && is_array($aPriceHistoryDaily) && sizeof($aPriceHistoryDaily)){
             $result = $aPriceHistoryDaily;
+            unset($aPriceHistoryDaily);
         }
 
         $aPriceHistory = array();
-        if($period){
+        if($result && $period){
             $dateStart = date("Y-m-d", time() - $period * 24 * 3600);
             for($i = 0; $i < count($result); $i++){
                 if($result[$i]['date'] < $dateStart){
