@@ -2889,28 +2889,28 @@ class Ethplorer {
                     $curDate = '';
                     $prevVol = 0;
                     $prevVolC = 0;
-                    for($i = 0; $i < count($aPriceHistory); $i++){
+                    for($i = 0; $i < count($result); $i++){
                         $firstRecord = false;
                         $lastRecord = false;
-                        if(!$curDate || ($curDate != $aPriceHistory[$i]['date'])){
-                            $aDailyRecord = $aPriceHistory[$i];
+                        if(!$curDate || ($curDate != $result[$i]['date'])){
+                            $aDailyRecord = $result[$i];
                             $firstRecord = true;
                         }
-                        if(($i == (count($aPriceHistory) - 1)) || ($aPriceHistory[$i]['date'] != $aPriceHistory[$i + 1]['date'])){
+                        if(($i == (count($result) - 1)) || ($result[$i]['date'] != $result[$i + 1]['date'])){
                             $lastRecord = true;
                             if($lastRecord){
-                                $aDailyRecord['close'] = $aPriceHistory[$i]['close'];
+                                $aDailyRecord['close'] = $result[$i]['close'];
                             }
                         }
                         if(!$firstRecord){
-                            if($aPriceHistory[$i]['high'] > $aDailyRecord['high']){
-                                $aDailyRecord['high'] = $aPriceHistory[$i]['high'];
+                            if($result[$i]['high'] > $aDailyRecord['high']){
+                                $aDailyRecord['high'] = $result[$i]['high'];
                             }
-                            if($aPriceHistory[$i]['low'] < $aDailyRecord['low']){
-                                $aDailyRecord['low'] = $aPriceHistory[$i]['low'];
+                            if($result[$i]['low'] < $aDailyRecord['low']){
+                                $aDailyRecord['low'] = $result[$i]['low'];
                             }
-                            $aDailyRecord['volume'] += $aPriceHistory[$i]['volume'];
-                            $aDailyRecord['volumeConverted'] += $aPriceHistory[$i]['volumeConverted'];
+                            $aDailyRecord['volume'] += $result[$i]['volume'];
+                            $aDailyRecord['volumeConverted'] += $result[$i]['volumeConverted'];
                         }
                         if($lastRecord){
                             // If volume goes up more than 10 mln times, we suppose it was a bug
