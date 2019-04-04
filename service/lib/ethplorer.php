@@ -2816,7 +2816,11 @@ class Ethplorer {
         $cache = 'rates-history-' . $address;
         $result = $this->oCache->get($cache, false, true);
         if($updateCache){
-            /*$lastTS = 0;
+            $lastTS = 0;
+            if(FALSE !== $result && is_array($result) && count($result)){
+                $lastTS = $result[count($result) - 1]['ts'];
+            }
+            /*
             $indTmpHistory = -1;
             if(FALSE !== $result){
                 for($i = 0; $i < count($result); $i++){
@@ -2831,8 +2835,8 @@ class Ethplorer {
             if(isset($this->aSettings['currency'])){
                 $method = 'getCurrencyHistory';
                 $params = array($address, 'USD');
-                //if($lastTS && !$updateFullHistory) $params[] = $lastTS + 1;
-                $result = $this->_jsonrpcall($this->aSettings['currency'], $method, $params);
+                if($lastTS) $params[] = $lastTS + 3600*24;
+                $resService = $this->_jsonrpcall($this->aSettings['currency'], $method, $params);
                 /*if(FALSE !== $result){
                     if($indTmpHistory >= 0){
                         array_splice($result, $indTmpHistory);
@@ -2841,7 +2845,7 @@ class Ethplorer {
                 }else{
                     $result = $res;
                 }*/
-                if($result){
+                if($resService){
                     $aToken = $this->getToken($address);
                     $tokenStartAt = false;
                     if($aToken){
@@ -2869,18 +2873,18 @@ class Ethplorer {
                         if(isset($this->aSettings['customTokenHistoryStart']) && isset($this->aSettings['customTokenHistoryStart'][$address])){
                             $tokenStartAt = $this->aSettings['customTokenHistoryStart'][$address];
                         }
-                        for($i = 0; $i < count($result); $i++){
+                        for($i = 0; $i < count($resService); $i++){
                             $zero = array('high' => 0, 'low' => 0, 'open' => 0, 'close' => 0, 'volume' => 0, 'volumeConverted' => 0);
-                            if($result[$i]['ts'] < $tokenStartAt){
-                                $result[$i] = array_merge($result[$i], $zero);
+                            if($resService[$i]['ts'] < $tokenStartAt){
+                                $resService[$i] = array_merge($resService[$i], $zero);
                             }
-                            if(isset($aPatch['ts-' . $result[$i]['ts']])){
-                                $result[$i] = array_merge($result[$i], $aPatch['ts-' . $result[$i]['ts']]);
+                            if(isset($aPatch['ts-' . $resService[$i]['ts']])){
+                                $resService[$i] = array_merge($resService[$i], $aPatch['ts-' . $resService[$i]['ts']]);
                             }
                             // @temporary: EVX invalid history values fix
                             if('0xf3db5fa2c66b7af3eb0c0b782510816cbe4813b8' == $address){
-                                if($result[$i]['high'] > 10){
-                                   $result[$i]['high'] = $result[$i]['low'] * 1.2;
+                                if($resService[$i]['high'] > 10){
+                                   $resService[$i]['high'] = $resService[$i]['low'] * 1.2;
                                 }
                             }
                         }
@@ -2891,28 +2895,28 @@ class Ethplorer {
                     $curDate = '';
                     $prevVol = 0;
                     $prevVolC = 0;
-                    for($i = 0; $i < count($result); $i++){
+                    for($i = 0; $i < count($resService); $i++){
                         $firstRecord = false;
                         $lastRecord = false;
-                        if(!$curDate || ($curDate != $result[$i]['date'])){
-                            $aDailyRecord = $result[$i];
+                        if(!$curDate || ($curDate != $resService[$i]['date'])){
+                            $aDailyRecord = $resService[$i];
                             $firstRecord = true;
                         }
-                        if(($i == (count($result) - 1)) || ($result[$i]['date'] != $result[$i + 1]['date'])){
+                        if(($i == (count($resService) - 1)) || ($resService[$i]['date'] != $resService[$i + 1]['date'])){
                             $lastRecord = true;
                             if($lastRecord){
-                                $aDailyRecord['close'] = $result[$i]['close'];
+                                $aDailyRecord['close'] = $resService[$i]['close'];
                             }
                         }
                         if(!$firstRecord){
-                            if($result[$i]['high'] > $aDailyRecord['high']){
-                                $aDailyRecord['high'] = $result[$i]['high'];
+                            if($resService[$i]['high'] > $aDailyRecord['high']){
+                                $aDailyRecord['high'] = $resService[$i]['high'];
                             }
-                            if($result[$i]['low'] < $aDailyRecord['low']){
-                                $aDailyRecord['low'] = $result[$i]['low'];
+                            if($resService[$i]['low'] < $aDailyRecord['low']){
+                                $aDailyRecord['low'] = $resService[$i]['low'];
                             }
-                            $aDailyRecord['volume'] += $result[$i]['volume'];
-                            $aDailyRecord['volumeConverted'] += $result[$i]['volumeConverted'];
+                            $aDailyRecord['volume'] += $resService[$i]['volume'];
+                            $aDailyRecord['volumeConverted'] += $resService[$i]['volumeConverted'];
                         }
                         if($lastRecord){
                             // If volume goes up more than 10 mln times, we suppose it was a bug
@@ -2930,20 +2934,20 @@ class Ethplorer {
                             $prevVol = $aDailyRecord['volume'];
                             $prevVolC = $aDailyRecord['volumeConverted'];                        
                         }
-                        $curDate = $result[$i]['date'];
+                        $curDate = $resService[$i]['date'];
                     }
-                    $this->log('redis', "getTokenPriceHistory:  " . $address . ' records: ' . sizeof($aPriceHistoryDaily), TRUE);
-                    $this->oCache->save($cache, $aPriceHistoryDaily);
+
+                    if(FALSE === $result || !is_array($result)) $result = array();
+                    $this->log('redis', "getTokenPriceHistory:  " . $address . ' in cache: ' . count($result) . ' new records: ' . sizeof($aPriceHistoryDaily), TRUE);
+                    $result = array_merge($result, $aPriceHistoryDaily);
+                    $this->oCache->save($cache, $result);
                 }
             }
         }
-        if(isset($aPriceHistoryDaily) && is_array($aPriceHistoryDaily) && sizeof($aPriceHistoryDaily)){
-            $result = $aPriceHistoryDaily;
-            unset($aPriceHistoryDaily);
-        }
 
         $aPriceHistory = array();
-        if($result && $period){
+        if(FALSE === $result || !is_array($result)) $result = array();
+        if(count($result) && $period){
             $dateStart = date("Y-m-d", time() - $period * 24 * 3600);
             for($i = 0; $i < count($result); $i++){
                 if($result[$i]['date'] < $dateStart){
