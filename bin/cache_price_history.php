@@ -24,7 +24,7 @@ $startTime = microtime(TRUE);
 echo "\n[".date("Y-m-d H:i")."], Started.";
 
 $es = Ethplorer::db($aConfig);
-$es->createProcessLock('priceHistory.lock', 3600);
+$es->createProcessLock('priceHistory.lock', 7200);
 foreach($aConfig['updateRates'] as $address){
     $es->getCache()->clearLocalCache();
     $es->getTokenPriceHistory($address, 0, 'hourly', TRUE);
