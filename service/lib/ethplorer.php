@@ -1958,24 +1958,26 @@ class Ethplorer {
                     }
                     $aHistory = $this->getTokenPriceHistory($address, 60, 'daily');
                     $aHourlyHistory = array();
-                    foreach($aHistory as $aHistRecord){
-                        for($i = 0; $i < 24; $i++){
-                            $aHourlyHistory[] = array(
-                                'ts' => $aHistRecord['ts'] + (3600 * $i),
-                                'date' => $aHistRecord['date'],
-                                'hour' => $i,
-                                'open' => $aHistRecord['open'],
-                                'close' => $aHistRecord['close'],
-                                'high' => $aHistRecord['high'],
-                                'low' => $aHistRecord['low'],
-                                'volume' => $aHistRecord['volume'] / 24,
-                                'volumeConverted' => $aHistRecord['volumeConverted'] / 24,
-                                'cap' => $aHistRecord['cap'],
-                                'average' => $aHistRecord['average']
-                            );
+                    if(is_array($aHistory) && sizeof($aHistory)){
+                        foreach($aHistory as $aHistRecord){
+                            for($i = 0; $i < 24; $i++){
+                                $aHourlyHistory[] = array(
+                                    'ts' => $aHistRecord['ts'] + (3600 * $i),
+                                    'date' => $aHistRecord['date'],
+                                    'hour' => $i,
+                                    'open' => $aHistRecord['open'],
+                                    'close' => $aHistRecord['close'],
+                                    'high' => $aHistRecord['high'],
+                                    'low' => $aHistRecord['low'],
+                                    'volume' => $aHistRecord['volume'] / 24,
+                                    'volumeConverted' => $aHistRecord['volumeConverted'] / 24,
+                                    'cap' => $aHistRecord['cap'],
+                                    'average' => isset($aHistRecord['average']) ? $aHistRecord['average'] : 0
+                                );
+                            }
                         }
                     }
-                    if(is_array($aHourlyHistory)){
+                    if(sizeof($aHourlyHistory)){
                         $prevDayCap = null;
                         $prevPrevDayCap = null;
                         foreach($aHourlyHistory as $aRecord){
