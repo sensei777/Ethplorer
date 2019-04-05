@@ -1819,7 +1819,7 @@ ethplorerWidget.Type['tokenPriceHistoryGrouped'] = function(element, options, te
             //console.log(keyPrice);
 
             // 'Low', 'Open', 'Close', 'High'
-            var low = 0, open = 0, high = 0, close = 0, volume = 0, volumeConverted = 0, rate = 0, diff = 0;
+            var low = 0, open = 0, high = 0, close = 0, volume = 0, volumeConverted = 0, rate = 0, diff = 0, avg = 0;
             if('undefined' !== typeof(aPriceData[keyPrice])){
                 low = aPriceData[keyPrice]['low'];
                 open = aPriceData[keyPrice]['open'];
