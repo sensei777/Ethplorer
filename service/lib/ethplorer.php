@@ -2840,7 +2840,7 @@ class Ethplorer {
             if(isset($this->aSettings['currency'])){
                 $method = 'getCurrencyHistory';
                 $params = array($address, 'USD');
-                if($lastTS) $params[] = $lastTS + 3600*24;
+                if($lastTS && !$updateFullHistory) $params[] = $lastTS + 3600*24;
                 $resService = $this->_jsonrpcall($this->aSettings['currency'], $method, $params);
                 if($resService){
                     $aToken = $this->getToken($address);
