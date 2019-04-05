@@ -1627,7 +1627,7 @@ ethplorerWidget.Type['tokenPriceHistoryGrouped'] = function(element, options, te
         }
     };
 
-    this.getTooltip = function(noPrice, date, low, open, close, high, operations, volume, convertedVolume, rate, diff, onlyPrice){
+    this.getTooltip = function(noPrice, date, low, open, close, high, operations, volume, convertedVolume, rate, diff, onlyPrice, avg, curDate){
         var tooltipDateFormatter = new google.visualization.DateFormat({ 
             pattern: "MMM dd, yyyy '+UTC'"
         });
@@ -1645,8 +1645,10 @@ ethplorerWidget.Type['tokenPriceHistoryGrouped'] = function(element, options, te
         if(noPrice){
             tooltip += '<span class="tooltipRow"><b>Token operations:</b> ' + operations + '</span><br/>';
         }else{
-            if(volume > 0) var avg = convertedVolume / volume;
-            else var avg = (open + close) / 2;
+            if(!avg){
+                if(volume > 0) avg = convertedVolume / volume;
+                else avg = (open + close) / 2;
+            }
 
             if(onlyPrice && !diff){
                 diff = ethplorerWidget.Utils.pdiff(close, open, true);
@@ -1671,8 +1673,9 @@ ethplorerWidget.Type['tokenPriceHistoryGrouped'] = function(element, options, te
                     var pdiff = ethplorerWidget.Utils.formatNum(diff, true, numDec, false, true);
                 }
                 var diffHtml = ' <span style="color:' + (pdiff >= 0 ? '#1E8C1E' : '#AE2525') + ';">(' + pdiff + '%)</span>';
-                tooltip += '<span class="tooltipRow"><b>Average:</b> ' + avgFormatter.formatValue(avg) + ' USD</span><br/>' +
-                '<span class="tooltipRow"><b>Open:</b> ' + currencyFormatter.formatValue(open) + ' <b>Close:</b> ' + currencyFormatter.formatValue(close) + diffHtml +'</span><br/>' +
+                tooltip += '<span class="tooltipRow"><b>Average:</b> ' + avgFormatter.formatValue(avg) + ' USD</span>' +
+                (curDate ? '' : ('<br/><span class="tooltipRow"><b>Open:</b> ' + currencyFormatter.formatValue(open) + ' <b>Close:</b> ' + currencyFormatter.formatValue(close) + diffHtml))
+                +'</span><br/>' +
                 '<span class="tooltipRow"><b>High:</b> ' + currencyFormatter.formatValue(high) + ' <b>Low:</b> ' + currencyFormatter.formatValue(low) + '</span><br/>';
             }
             tooltip += '<span class="tooltipRow"><b class="tooltipRowOps">Token operations:</b> ' + numFormatter.formatValue(operations) + '</span>' +
@@ -1807,7 +1810,6 @@ ethplorerWidget.Type['tokenPriceHistoryGrouped'] = function(element, options, te
 
         var curDate = true;
         for(var d = new Date(strFirstDate); d >= fnDate; d.setDate(d.getDate() - 1)){
-            //console.log(d);
             // get tx count
             var key = d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate();
             var cnt = ('undefined' !== typeof(aCountData[key])) ? aCountData[key] : 0;
@@ -1827,6 +1829,7 @@ ethplorerWidget.Type['tokenPriceHistoryGrouped'] = function(element, options, te
                 volumeConverted = ('undefined' !== typeof(aPriceData[keyPrice]['volumeConverted'])) ? aPriceData[keyPrice]['volumeConverted'] : 0;
                 rate = ('undefined' !== typeof(aPriceData[keyPrice]['rate'])) ? aPriceData[keyPrice]['rate'] : 0;
                 diff = ('undefined' !== typeof(aPriceData[keyPrice]['diff'])) ? aPriceData[keyPrice]['diff'] : 0;
+                avg = ('undefined' !== typeof(aPriceData[keyPrice]['average'])) ? aPriceData[keyPrice]['average'] : 0;
             }
 
             var chartMonth = d.getMonth() + 1;
@@ -1835,12 +1838,13 @@ ethplorerWidget.Type['tokenPriceHistoryGrouped'] = function(element, options, te
             if(chartDay < 10) chartDay = '0' + chartDay;
             var strChartDate = d.getFullYear() + '-' + chartMonth + '-' + chartDay + 'T00:00:00Z';
 
-            var tooltip = this.getTooltip(noPrice, new Date(strChartDate), low, open, close, high, cnt, volume, volumeConverted, rate, diff, onlyPrice);
+            var tooltip = this.getTooltip(noPrice, new Date(strChartDate), low, open, close, high, cnt, volume, volumeConverted, rate, diff, onlyPrice, avg, curDate);
             if(noPrice){
                 aData.push([new Date(strChartDate), cnt, 'opacity: 0.5', tooltip]);
             }else{
                 aData.push([new Date(strChartDate), low, open, close, high, tooltip, cnt, 'opacity: 0.5', tooltip, volume, this.options['theme'] == 'dark' ? 'opacity: 0.15' : 'opacity: 0.5', tooltip]);
             }
+            curDate = false;
         }
         //console.log(aData);
         var data = google.visualization.arrayToDataTable(aData);
