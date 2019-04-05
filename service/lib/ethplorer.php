@@ -2816,35 +2816,32 @@ class Ethplorer {
         $cache = 'rates-history-' . $address;
         $result = $this->oCache->get($cache, false, true);
         if($updateCache){
+            $logMessage = $address . ' in cache: ' . count($result);
             $lastTS = 0;
             if(FALSE !== $result && is_array($result) && count($result)){
-                $lastTS = $result[count($result) - 1]['ts'];
-            }
-            /*
-            $indTmpHistory = -1;
-            if(FALSE !== $result){
-                for($i = 0; $i < count($result); $i++){
-                    if(!isset($result[$i]['tmp']) && $result[$i]['ts'] > $lastTS){
-                        $lastTS = $result[$i]['ts'];
-                    }
-                    if(isset($result[$i]['tmp']) && $indTmpHistory < 0){
+                // remove tmp data
+                $indTmpHistory = -1;
+                for($i = count($result) - 1; $i >= 0; $i--){
+                    if(isset($result[$i]['tmp'])){
                         $indTmpHistory = $i;
+                    }else{
+                        break;
                     }
                 }
-            }*/
+                if($indTmpHistory > 0){
+                    $logMessage .= ' tmp removed: ' . (count($result) - $indTmpHistory);
+                    array_splice($result, $indTmpHistory);
+                }
+                if(count($result)){
+                    $lastTS = $result[count($result) - 1]['ts'];
+                }
+            }
+
             if(isset($this->aSettings['currency'])){
                 $method = 'getCurrencyHistory';
                 $params = array($address, 'USD');
                 if($lastTS) $params[] = $lastTS + 3600*24;
                 $resService = $this->_jsonrpcall($this->aSettings['currency'], $method, $params);
-                /*if(FALSE !== $result){
-                    if($indTmpHistory >= 0){
-                        array_splice($result, $indTmpHistory);
-                    }
-                    $result = array_merge($result, $res);
-                }else{
-                    $result = $res;
-                }*/
                 if($resService){
                     $aToken = $this->getToken($address);
                     $tokenStartAt = false;
@@ -2938,7 +2935,7 @@ class Ethplorer {
                     }
 
                     if(FALSE === $result || !is_array($result)) $result = array();
-                    $this->log('redis', "getTokenPriceHistory:  " . $address . ' in cache: ' . count($result) . ' new records: ' . sizeof($aPriceHistoryDaily), TRUE);
+                    $this->log('price-history', $logMessage . ' new records: ' . sizeof($aPriceHistoryDaily), TRUE);
                     $result = array_merge($result, $aPriceHistoryDaily);
                     $this->oCache->save($cache, $result);
                 }
