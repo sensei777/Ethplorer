@@ -115,7 +115,7 @@ class evxCache {
             $this->driver = $driver;
         }
         $this->metric = FALSE;
-        if ($aConfig['statsd']) {
+        if (!empty($aConfig['statsd'])) {
             $connection = new \Domnikl\Statsd\Connection\UdpSocket($aConfig['statsd']['host'], $aConfig['statsd']['port']);
             $this->metric = new \Domnikl\Statsd\Client($connection, $aConfig['statsd']['prefix']);
 
