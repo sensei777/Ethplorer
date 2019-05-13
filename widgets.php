@@ -16,6 +16,9 @@
  */
 
 $aConfig = require dirname(__FILE__) . '/service/config.php';
+
+$codeVersion = isset($aConfig['codeVersion']) ? $aConfig['codeVersion'] : "209";
+
 ?><!DOCTYPE html>
 <html>
     <head>
@@ -23,7 +26,7 @@ $aConfig = require dirname(__FILE__) . '/service/config.php';
         <link rel="stylesheet" href="/css/jquery-ui.min.css">
         <link rel="stylesheet" href="/css/bootstrap.min.css">
 	<link rel="stylesheet" href="/css/font-awesome.min.css">
-        <link rel="stylesheet" href="/css/ethplorer.css?v=102>">
+        <link rel="stylesheet" href="/css/ethplorer.css?v=<?=$codeVersion?>>">
         <meta charset="utf-8">
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
         <meta name="referrer" content="never" />
@@ -36,9 +39,9 @@ $aConfig = require dirname(__FILE__) . '/service/config.php';
         <script src="/js/jquery-ui.min.js?v=102"></script>
         <script src="/js/bootstrap.min.js"></script>
         <script src="/js/bignumber.js"></script>
-        <script src="/js/ethplorer.js?v=102"></script>
-        <script src="/js/ethplorer-search.js?v=102"></script>
-        <script src="/js/ethplorer-note.js?v=102"></script>
+        <script src="/js/ethplorer.js?v=<?=$codeVersion?>"></script>
+        <script src="/js/ethplorer-search.js?v=<?=$codeVersion?>"></script>
+        <script src="/js/ethplorer-note.js?v=<?=$codeVersion?>"></script>
         <script src="/js/ace.js"></script>
         <script src="/js/config.js"></script>
         <style type="text/css">
@@ -263,8 +266,8 @@ $aConfig = require dirname(__FILE__) . '/service/config.php';
                             </form>
                         </ul>
                         <ul class="nav navbar-nav navbar-right" id="topmenu">
-                            <li onclick="document.location.href='/top';">TOP-50</li>
-                            <li onclick="document.location.href='/widgets';">Widgets</li>
+                            <li onclick="document.location.href='/index';">Index<div class="new-mark">NEW</div></li>
+                            <li onclick="document.location.href='/top';">TOP-50<div class="new-mark">NEW</div></li>
                             <li onclick="document.location.href='https://github.com/EverexIO/Ethplorer/wiki/Ethplorer-API';">API</li>
                             <li onclick="document.location.href='https://ethplorer.io/#subscribe';">Subscribe</li>
                         </ul>
@@ -390,13 +393,13 @@ eWgs.push(function () {
             '#token-history-grouped-2', // Placeholder element
             'tokenHistoryGrouped', // Widget type
             {
-                'period': 10,
+                'period': 90,
                 'type': 'column', // supported types: area, column, line
                 options: {
                     'title': 'Ethereum Tokens Pulse',
                     'pointSize': 2,
                     'hAxis': {
-                        'title': '10 days token operations chart',
+                        'title': '90 days token operations chart',
                         'titleTextStyle': {
                             'color': '#3366CC',
                             'italic': true
@@ -441,9 +444,10 @@ eWgs.push(function () {
             '#token-history-grouped-3', // Placeholder element
             'tokenHistoryGrouped', // Widget type
             {
+                'period': 90,
                 'theme': 'dark',
                 options: {
-
+                    'pointSize': 1,
                     'title': 'Ethereum Tokens Pulse',
                     'hAxis': {
                         'title': '90 days token operations chart',
@@ -628,8 +632,7 @@ eWgs.push(function () {
                         <div class="col-xs-7 col-sm-3">
                             <a href="#"><img src="/images/ethplorerlogowhite400.png" style="max-width: 140px;" alt=""></a>
                             <div>
-                                <div style="color:#eeeeee;">© 2016-2018 <a href="https://everex.one/" target="_blank" class="small-link">Everex</a>
-                                    <br><a href="mailto:support@ethplorer.io" class="small-link">support@ethplorer.io</a>
+                                <div style="color:#eeeeee;">© 2016-2018 <a href="https://everex.io/" target="_blank" class="small-link">Everex</a>
                                     <br><a href="/privacy" class="small-link">Privacy &amp; Terms</a><br>
                                 </div>
                             </div>
@@ -648,7 +651,7 @@ eWgs.push(function () {
                                 <li><a href="https://ethplorer.io/#contact">Contact</a></li>
                                 <li><a href="https://ethplorer.io/#subscribe">Subscribe</a></li>
                                 <li><a href="https://www.reddit.com/r/ethplorer/">Discuss at Reddit</a></li>
-                                <li><a href="https://docs.google.com/forms/d/e/1FAIpQLSemDE0-vqUnJ7ToRdt1qR95iTbaMfq0FRXt7INMMJrm1IO4dQ/viewform?c=0&w=1">Update your Token info</a></li>
+                                <li><a href="http://bit.ly/ethp-contact">Update your Token info</a></li>
                             </ul>
                         </div>
                         <div class="col-xs-7 col-sm-5 col-md-4 footer-donation">

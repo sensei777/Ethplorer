@@ -50,7 +50,10 @@ EthplorerSearch = {
             minLength: 1,
             select: function(event, ui){
                 if('undefined' !== typeof(ui.item[2])){
-                    document.location.href = '/address/' + ui.item[2];
+                    if('undefined' !== typeof(Ethplorer)){
+                        Ethplorer.gaSendEvent('userAction', 'searchHeader', ui.item[2]);
+                    }
+                    document.location.href = '/address/' + ui.item[2] + '?from=search';
                 }
             }
         })
