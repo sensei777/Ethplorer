@@ -100,6 +100,11 @@ class evxCache {
     protected $prefixGetter;
 
     /**
+     * @var bool|\Domnikl\Statsd\Client
+     */
+    protected $metric = FALSE;
+
+    /**
      * Constructor.
      *
      * @param string  $path  Cache files path
@@ -114,7 +119,6 @@ class evxCache {
         if(FALSE !== $driver){
             $this->driver = $driver;
         }
-        $this->metric = FALSE;
         if (!empty($aConfig['statsd'])) {
             $connection = new \Domnikl\Statsd\Connection\UdpSocket($aConfig['statsd']['host'], $aConfig['statsd']['port']);
             $this->metric = new \Domnikl\Statsd\Client($connection, $aConfig['statsd']['prefix']);
