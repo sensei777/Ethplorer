@@ -1,6 +1,6 @@
 {
     "require": {
-        "litipk/php-bignumbers": "0.7.3",
+        "litipk/php-bignumbers": "0.8.6"
         "predis/predis": "1.1.1",
         "sentry/sentry": "^1.10@dev"
     },
