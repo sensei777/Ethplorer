@@ -56,6 +56,10 @@ class evxCache {
      */
     const NON_EXPIRATION_LIFETIME = -1;
 
+    const ETH_ADDRESS_REGEX = '/0x[a-fA-F0-9]{40}/';
+
+    const ETH_HASH_REGEX = '/0x[A-Fa-f0-9]{64}/';
+
     /**
      * Cache storage.
      *
@@ -93,6 +97,8 @@ class evxCache {
 
     protected $useLocks = FALSE;
 
+    protected $prefixGetter;
+
     /**
      * Constructor.
      *
@@ -108,8 +114,14 @@ class evxCache {
         if(FALSE !== $driver){
             $this->driver = $driver;
         }
-        $this->useLocks = $useLocks;
+        $this->metric = FALSE;
+        if ($aConfig['statsd']) {
+            $connection = new \Domnikl\Statsd\Connection\UdpSocket($aConfig['statsd']['host'], $aConfig['statsd']['port']);
+            $this->metric = new \Domnikl\Statsd\Client($connection, $aConfig['statsd']['prefix']);
 
+        }
+
+        $this->useLocks = $useLocks;
         if(isset($aConfig['cliCacheDriver']) && (php_sapi_name() === 'cli')) $this->driver = $aConfig['cliCacheDriver'];
 
         if('memcached' === $this->driver){
@@ -132,6 +144,27 @@ class evxCache {
             }catch(\Exception $e){
                 die($e->getMessage());
             }
+        }
+    }
+
+    protected function getPrefixByKeys($method, $key) {
+        $postfix = preg_replace(self::ETH_HASH_REGEX, 'hash', $key);
+        $postfix = preg_replace(self::ETH_ADDRESS_REGEX, 'address', $postfix);
+        $postfix = preg_replace('/[0-9]+/', '_', $postfix);
+        return $method . '.' . $postfix;
+    }
+
+    protected function startTiming($prefix) {
+        if ($this->metric) {
+            $this->metric->startTiming($prefix);
+        }
+    }
+
+    protected function stopTiming($prefix, $size) {
+        if ($this->metric) {
+            $this->metric->endTiming($prefix);
+            // I know that is not a timing but statsd make for timing min max
+            $this->metric->timing($prefix . '-size', $size);
         }
     }
 
@@ -179,6 +212,8 @@ class evxCache {
      * @param mixed   $data       Data to store
      */
     public function save($entryName, $data, $nonExpiration = FALSE){
+        $metricPrefix = $this->getPrefixByKeys('set', $entryName);
+        $this->startTiming($metricPrefix);
         $saveRes = false;
         $this->store($entryName, $data);
         switch($this->driver){
@@ -224,6 +259,7 @@ class evxCache {
                 break;
         }
         if($this->useLocks) $this->deleteLock($entryName);
+        $this->stopTiming($metricPrefix, strlen(json_encode($data)));
         return $saveRes;
     }
 
@@ -301,6 +337,8 @@ class evxCache {
      * @return mixed
      */
     public function loadCachedData($entryName, $default = NULL, $cacheLifetime = FALSE){
+        $prefix = $this->getPrefixByKeys('get', $entryName);
+        $this->startTiming($prefix);
         $result = array('data' => $default, 'expired' => FALSE);
         $file = ('file' === $this->driver);
         if('memcached' === $this->driver || 'redis' === $this->driver){
@@ -337,6 +375,7 @@ class evxCache {
                 }
             }
         }
+        $this->stopTiming($prefix, strlen(json_encode($result)));
         return $result;
     }
 
@@ -361,6 +400,7 @@ class evxCache {
             $result = $aCachedData['data'];
             $isExpired = $aCachedData['expired'];
         }else{
+
             return $result;
         }
 
