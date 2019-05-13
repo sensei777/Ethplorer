@@ -265,7 +265,7 @@ class Ethplorer {
     /**
      * Singleton getter.
      *
-     * @return Ethereum
+     * @return Ethplorer
      */
     public static function db(array $aConfig = array()){
         if(is_null(self::$oInstance)){
