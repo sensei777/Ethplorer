@@ -168,7 +168,7 @@ class evxCache {
         if ($this->metric) {
             $this->metric->endTiming($prefix);
             // I know that is not a timing but statsd make for timing min max
-            $this->metric->timing($prefix . '-size', $size);
+            $this->metric->timing('size.' . $prefix , $size);
         }
     }
 
