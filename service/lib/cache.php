@@ -58,7 +58,7 @@ class evxCache {
 
     const ETH_ADDRESS_REGEX = '/0x[a-fA-F0-9]{40}/';
 
-    const MD5_REGEX = '/^[a-fA-F0-9]{32}$/';
+    const MD5_REGEX = '/[a-fA-F0-9]{32}$/';
 
     const UUID_REGEX = '/[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}/';
 
