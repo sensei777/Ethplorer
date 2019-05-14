@@ -58,6 +58,10 @@ class evxCache {
 
     const ETH_ADDRESS_REGEX = '/0x[a-fA-F0-9]{40}/';
 
+    const MD5_REGEX = '/^[a-fA-F0-9]{32}$/';
+
+    const UUID_REGEX = '/[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}/';
+
     const ETH_HASH_REGEX = '/0x[A-Fa-f0-9]{64}/';
 
     /**
@@ -154,6 +158,8 @@ class evxCache {
     protected function getPrefixByKeys($method, $key) {
         $postfix = preg_replace(self::ETH_HASH_REGEX, 'hash', $key);
         $postfix = preg_replace(self::ETH_ADDRESS_REGEX, 'address', $postfix);
+        $postfix = preg_replace(self::MD5_REGEX, 'md', $postfix);
+        $postfix = preg_replace(self::UUID_REGEX, 'uuid', $postfix);
         $postfix = preg_replace('/[0-9]+/', '_', $postfix);
         return $method . '.' . $postfix;
     }
