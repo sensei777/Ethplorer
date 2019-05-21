@@ -15,6 +15,8 @@
  * limitations under the License.
  */
 
+require_once dirname(__FILE__) . '/../service/lib/metric.php';
+
 class ethplorerController {
     protected $apiKey;
     protected $db;
@@ -112,9 +114,17 @@ class ethplorerController {
         if($source){
             file_put_contents($logsDir . '/widget-request.log', "[$date] Widget: {$this->command}, source: {$source}\n", FILE_APPEND);
         }
-        $memUsage = round(memory_get_usage(TRUE) / (1024 * 1024), 2);
-        $peakMemUsage = round(memory_get_peak_usage(TRUE) / (1024 * 1024), 2);
+        $memUsageRaw = memory_get_usage(TRUE);
+        $peakMemUsageRaw = memory_get_peak_usage(TRUE);
+        $memUsage = round($memUsageRaw / (1024 * 1024), 2);
+        $peakMemUsage = round($peakMemUsageRaw / (1024 * 1024), 2);
         $logStr = "[$date] Call: {$this->command}, Key: {$key} URI: {$_SERVER["REQUEST_URI"]}, IP: {$_SERVER['REMOTE_ADDR']}, {$ms} s. Mem: {$memUsage} MB. Peak: {$peakMemUsage} MB. {$this->cacheState}\n";
+        Metrics::writeApiMethodTiming(
+            $this->command,
+            microtime(TRUE) - $this->startTime,
+            $memUsageRaw,
+            $peakMemUsageRaw
+        );
         file_put_contents($logsDir . '/api-request.log', $logStr, FILE_APPEND);
     }
 

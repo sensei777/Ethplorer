@@ -17,6 +17,8 @@
 
 require_once __DIR__ . '/../../vendor/autoload.php';
 
+require_once __DIR__ . '/metric.php';
+
 /**
  * Cache class.
  */
@@ -96,24 +98,6 @@ class evxCache {
     protected $prefixGetter;
 
     /**
-     * @var bool|\Domnikl\Statsd\Client
-     */
-    protected $metric = FALSE;
-
-    protected $prefixesWithDash = [
-        'highloaded-address',
-        'top_tokens-by-period-volume',
-        'top_tokens-by-current-volume',
-        'block-txs',
-        'rates-history',
-        'cap-history',
-        'tokens',
-        'lastBlock',
-        'top_tokens_totals',
-        'tokens-simple'
-    ];
-
-    /**
      * Constructor.
      *
      * @param string  $path  Cache files path
@@ -131,7 +115,6 @@ class evxCache {
         if (!empty($aConfig['statsd'])) {
             $connection = new \Domnikl\Statsd\Connection\UdpSocket($aConfig['statsd']['host'], $aConfig['statsd']['port']);
             $this->metric = new \Domnikl\Statsd\Client($connection, $aConfig['statsd']['prefix']);
-
         }
 
         $this->useLocks = $useLocks;
@@ -157,32 +140,6 @@ class evxCache {
             }catch(\Exception $e){
                 die($e->getMessage());
             }
-        }
-    }
-
-    protected function getPrefixByKeys($method, $key) {
-        if (!$this->metric) {
-            return $method . '.' . $key;
-        }
-        foreach ($this->prefixesWithDash as $prefix) {
-            if (strpos($key, $prefix) === 0) {
-                return $method . '.' . $prefix;
-            }
-        }
-        return $method . '.' . explode('-', $key)[0];
-    }
-
-    protected function startTiming($prefix) {
-        if ($this->metric) {
-            $this->metric->startTiming($prefix);
-        }
-    }
-
-    protected function stopTiming($prefix, $size) {
-        if ($this->metric) {
-            $this->metric->endTiming($prefix);
-            // I know that is not a timing but statsd make for timing min max
-            $this->metric->timing('size.' . $prefix , $size);
         }
     }
 
@@ -230,8 +187,7 @@ class evxCache {
      * @param mixed   $data       Data to store
      */
     public function save($entryName, $data, $nonExpiration = FALSE){
-        $metricPrefix = $this->getPrefixByKeys('set', $entryName);
-        $this->startTiming($metricPrefix);
+        Metrics::startCacheTiming('set', $entryName);
         $saveRes = false;
         $this->store($entryName, $data);
         switch($this->driver){
@@ -277,7 +233,7 @@ class evxCache {
                 break;
         }
         if($this->useLocks) $this->deleteLock($entryName);
-        $this->stopTiming($metricPrefix, strlen(json_encode($data)));
+        Metrics::writeCacheTiming('set', $entryName, strlen(json_encode($data)));
         return $saveRes;
     }
 
@@ -355,8 +311,7 @@ class evxCache {
      * @return mixed
      */
     public function loadCachedData($entryName, $default = NULL, $cacheLifetime = FALSE){
-        $prefix = $this->getPrefixByKeys('get', $entryName);
-        $this->startTiming($prefix);
+        Metrics::startCacheTiming('get', $entryName);
         $result = array('data' => $default, 'expired' => FALSE);
         $file = ('file' === $this->driver);
         if('memcached' === $this->driver || 'redis' === $this->driver){
@@ -393,7 +348,7 @@ class evxCache {
                 }
             }
         }
-        $this->stopTiming($prefix, strlen(json_encode($result)));
+        Metrics::writeCacheTiming('get', $entryName, strlen(json_encode($result)));
         return $result;
     }
 
