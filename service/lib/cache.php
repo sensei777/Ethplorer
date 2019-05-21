@@ -56,14 +56,6 @@ class evxCache {
      */
     const NON_EXPIRATION_LIFETIME = -1;
 
-    const ETH_ADDRESS_REGEX = '/0x[a-fA-F0-9]{40}/';
-
-    const MD5_REGEX = '/[a-fA-F0-9]{32}$/';
-
-    const UUID_REGEX = '/[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}/';
-
-    const ETH_HASH_REGEX = '/0x[A-Fa-f0-9]{64}/';
-
     /**
      * Cache storage.
      *
@@ -107,6 +99,19 @@ class evxCache {
      * @var bool|\Domnikl\Statsd\Client
      */
     protected $metric = FALSE;
+
+    protected $prefixesWithDash = [
+        'highloaded-address',
+        'top_tokens-by-period-volume',
+        'top_tokens-by-current-volume',
+        'block-txs',
+        'rates-history',
+        'cap-history',
+        'tokens',
+        'lastBlock',
+        'top_tokens_totals',
+        'tokens-simple'
+    ];
 
     /**
      * Constructor.
@@ -156,12 +161,15 @@ class evxCache {
     }
 
     protected function getPrefixByKeys($method, $key) {
-        $postfix = preg_replace(self::ETH_HASH_REGEX, 'hash', $key);
-        $postfix = preg_replace(self::ETH_ADDRESS_REGEX, 'address', $postfix);
-        $postfix = preg_replace(self::MD5_REGEX, 'md', $postfix);
-        $postfix = preg_replace(self::UUID_REGEX, 'uuid', $postfix);
-        $postfix = preg_replace('/[0-9]+/', '_', $postfix);
-        return $method . '.' . $postfix;
+        if (!$this->metric) {
+            return $method . '.' . $key;
+        }
+        foreach ($this->prefixesWithDash as $prefix) {
+            if (strpos($key, $prefix) === 0) {
+                return $method . '.' . $prefix;
+            }
+        }
+        return $method . '.' . explode('-', $key)[0];
     }
 
     protected function startTiming($prefix) {
