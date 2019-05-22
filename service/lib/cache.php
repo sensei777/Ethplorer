@@ -178,11 +178,13 @@ class evxCache {
         }
     }
 
-    protected function stopTiming($prefix, $size) {
+    protected function stopTiming($prefix, $size = false) {
         if ($this->metric) {
             $this->metric->endTiming($prefix);
-            // I know that is not a timing but statsd make for timing min max
-            $this->metric->timing('size.' . $prefix , $size);
+            if ($size) {
+                // I know that is not a timing but statsd make for timing min max
+                $this->metric->timing('size.' . $prefix , $size);
+            }
         }
     }
 
@@ -234,6 +236,7 @@ class evxCache {
         $this->startTiming($metricPrefix);
         $saveRes = false;
         $this->store($entryName, $data);
+        $size = false;
         switch($this->driver){
             case 'redis':
             case 'memcached':
@@ -254,10 +257,12 @@ class evxCache {
                 $aCachedData = array('lifetime' => $lifetime, 'data' => $data, 'lock' => true);
                 if('redis' == $this->driver){
                     $saveOptions = JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE | JSON_PARTIAL_OUTPUT_ON_ERROR;
+                    $serializedCashData = json_encode($aCachedData, $saveOptions);
+                    $size = strlen($serializedCashData);
                     if($nonExpiration){
-                        $saveRes = $this->oDriver->set($entryName, json_encode($aCachedData, $saveOptions));
+                        $saveRes = $this->oDriver->set($entryName, $serializedCashData);
                     }else{
-                        $saveRes = $this->oDriver->set($entryName, json_encode($aCachedData, $saveOptions), 'ex', $ttl);
+                        $saveRes = $this->oDriver->set($entryName, $serializedCashData, 'ex', $ttl);
                     }
                     if('OK' !== (string)$saveRes){
                         error_log("Write data to redis failed: " . $saveRes . " Data: " . json_encode($aCachedData) . " TTL: " . $ttl);
@@ -273,11 +278,12 @@ class evxCache {
                 $filename = $this->path . '/' . $entryName . ".tmp";
                 //@unlink($filename);
                 $json = json_encode($data, JSON_PRETTY_PRINT);
+                $size = strlen($json);
                 $saveRes = !!file_put_contents($filename, $json);
                 break;
         }
         if($this->useLocks) $this->deleteLock($entryName);
-        $this->stopTiming($metricPrefix, strlen(json_encode($data)));
+        $this->stopTiming($metricPrefix, $size);
         return $saveRes;
     }
 
@@ -359,8 +365,15 @@ class evxCache {
         $this->startTiming($prefix);
         $result = array('data' => $default, 'expired' => FALSE);
         $file = ('file' === $this->driver);
+        $size = false;
         if('memcached' === $this->driver || 'redis' === $this->driver){
-            $memcachedData = ('redis' == $this->driver) ? json_decode($this->oDriver->get($entryName), TRUE) : $this->oDriver->get($entryName);
+            if ('redis' == $this->driver) {
+                $cachedData = $this->oDriver->get($entryName);
+                $size = strlen($cachedData);
+                $memcachedData = json_decode($this->oDriver->get($entryName), TRUE);
+            } else {
+                $memcachedData = $this->oDriver->get($entryName);
+            }
             if($memcachedData && isset($memcachedData['lifetime']) && isset($memcachedData['data'])){
                 $result['data'] = $memcachedData['data'];
                 if($memcachedData['lifetime'] > 0 && $memcachedData['lifetime'] < time()){
@@ -388,12 +401,13 @@ class evxCache {
                 }
                 if(!$isFileExpired || !$result['data'] || $result['expired']){
                     $contents = @file_get_contents($filename);
+                    $size = strlen($contents);
                     $result['data'] = json_decode($contents, TRUE);
                     $result['expired'] = $isFileExpired;
                 }
             }
         }
-        $this->stopTiming($prefix, strlen(json_encode($result)));
+        $this->stopTiming($prefix, $size);
         return $result;
     }
 
