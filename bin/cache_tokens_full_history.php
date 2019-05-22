@@ -22,7 +22,7 @@ $startTime = microtime(TRUE);
 echo "\n[".date("Y-m-d H:i")."], Started.";
 
 $es = Ethplorer::db($aConfig);
-$es->createProcessLock('tokens.full.history.lock', 1800);
+$es->createProcessLock('tokens.full.history.lock', 7200);
 
 $es->getTokenFullHistoryGrouped(TRUE);
 $es->getTokenCapHistory(0, TRUE);
