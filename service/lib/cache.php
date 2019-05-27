@@ -370,7 +370,7 @@ class evxCache {
             if ('redis' == $this->driver) {
                 $cachedData = $this->oDriver->get($entryName);
                 $size = strlen($cachedData);
-                $memcachedData = json_decode($this->oDriver->get($entryName), TRUE);
+                $memcachedData = json_decode($cachedData, TRUE);
             } else {
                 $memcachedData = $this->oDriver->get($entryName);
             }
