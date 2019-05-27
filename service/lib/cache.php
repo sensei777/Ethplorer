@@ -129,7 +129,12 @@ class evxCache {
             $this->driver = $driver;
         }
         if (!empty($aConfig['statsd'])) {
-            $connection = new \Domnikl\Statsd\Connection\UdpSocket($aConfig['statsd']['host'], $aConfig['statsd']['port']);
+            $connection = new \Domnikl\Statsd\Connection\UdpSocket(
+                $aConfig['statsd']['host'],
+                $aConfig['statsd']['port'],
+                isset($aConfig['statsd']['timeout']) ? $aConfig['statsd']['timeout'] : 0.5,
+                isset($aConfig['statsd']['persist']) ? $aConfig['statsd']['persist'] : true
+            );
             $this->metric = new \Domnikl\Statsd\Client($connection, $aConfig['statsd']['prefix']);
 
         }
