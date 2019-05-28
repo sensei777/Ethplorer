@@ -95,6 +95,10 @@ class evxCache {
 
     protected $prefixGetter;
 
+    protected $timings = [];
+
+    protected $startTimings = [];
+
     /**
      * @var bool|\Domnikl\Statsd\Client
      */
@@ -129,14 +133,31 @@ class evxCache {
             $this->driver = $driver;
         }
         if (!empty($aConfig['statsd'])) {
-            $connection = new \Domnikl\Statsd\Connection\UdpSocket(
-                $aConfig['statsd']['host'],
-                $aConfig['statsd']['port'],
-                isset($aConfig['statsd']['timeout']) ? $aConfig['statsd']['timeout'] : 0.5,
-                isset($aConfig['statsd']['persist']) ? $aConfig['statsd']['persist'] : true
-            );
-            $this->metric = new \Domnikl\Statsd\Client($connection, $aConfig['statsd']['prefix']);
-
+            $this->metric = true;
+            $self = $this;
+            register_shutdown_function(function() use ($aConfig, $self) {
+                if (!empty($self) && !(empty($self->timings))) {
+                    $timings = $self->timings;
+                    $time = microtime(true);
+                    $connection = new \Domnikl\Statsd\Connection\UdpSocket(
+                        $aConfig['statsd']['host'],
+                        $aConfig['statsd']['port'],
+                        isset($aConfig['statsd']['timeout']) ? $aConfig['statsd']['timeout'] : 0.5,
+                        isset($aConfig['statsd']['persist']) ? $aConfig['statsd']['persist'] : true
+                    );
+                    $statsd = new \Domnikl\Statsd\Client($connection, $aConfig['statsd']['prefix']);
+                    $connectionTime = microtime(true) - $time;
+                    $statsd->startBatch();
+                    foreach ($timings as $prefix => $metricValues) {
+                        foreach ($metricValues as $value) {
+                            $statsd->timing($prefix, $value);
+                        }
+                    }
+                    $statsd->endBatch();
+                    $statsd->timing('statsd.connection-time', $connectionTime);
+                    $statsd->timing('statsd.metric-send', microtime(true) - $time);
+                }
+            });
         }
 
         $this->useLocks = $useLocks;
@@ -177,18 +198,27 @@ class evxCache {
         return $method . '.' . explode('-', $key)[0];
     }
 
+    protected function setTiming($prefix, $value) {
+        if(empty($this->timings[$prefix])) {
+            $this->timings[$prefix] = [];
+        }
+        $this->timings[$prefix][] = $value;
+    }
+
     protected function startTiming($prefix) {
         if ($this->metric) {
-            $this->metric->startTiming($prefix);
+            $this->startTimings[$prefix] = microtime(true);
         }
     }
 
     protected function stopTiming($prefix, $size = false) {
         if ($this->metric) {
-            $this->metric->endTiming($prefix);
-            if ($size) {
-                // I know that is not a timing but statsd make for timing min max
-                $this->metric->timing('size.' . $prefix , $size);
+            if (!empty($this->startTimings[$prefix])) {
+                $this->setTiming($prefix, microtime(true) - $this->startTimings[$prefix]);
+                unset($this->startTimings[$prefix]);
+                if ($size) {
+                    $this->setTiming(sprintf('size.%s', $prefix), $size);
+                }
             }
         }
     }
