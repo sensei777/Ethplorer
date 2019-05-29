@@ -19,6 +19,7 @@ if(file_exists("_service.php")){
 }
 
 require dirname(__FILE__) . '/lib/ethplorer.php';
+require_once dirname(__FILE__) . '/lib/metric.php';
 
 $data = isset($_GET["data"]) ? strtolower($_GET["data"]) : false;
 $page = isset($_GET["page"]) ? $_GET["page"] : false;
@@ -36,6 +37,10 @@ $pageSize = 10;
 $result = array();
 
 $aConfig = require_once dirname(__FILE__) . '/config.php';
+
+if (!empty($aConfig['statsd'])) {
+    Metrics::initMetric($aConfig['statsd']);
+}
 
 if($debugId){
     $aConfig['debugId'] = $debugId;

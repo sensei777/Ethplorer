@@ -16,12 +16,17 @@
  */
 $aConfig = require dirname(__FILE__) . '/service/config.php';
 require dirname(__FILE__) . '/service/lib/ethplorer.php';
+require_once  dirname(__FILE__) . '/service/lib/metric.php';
 /**
  * @var Ethplorer
  */
 $es = Ethplorer::db($aConfig);
 
 $codeVersion = isset($aConfig['codeVersion']) ? $aConfig['codeVersion'] : "220";
+
+if (!empty($aConfig['statsd'])) {
+    Metrics::initMetric($aConfig['statsd']);
+}
 
 $error = TRUE;
 $header = "";
