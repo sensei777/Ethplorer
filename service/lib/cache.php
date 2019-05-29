@@ -98,6 +98,24 @@ class evxCache {
     protected $prefixGetter;
 
     /**
+     * @var bool|\Domnikl\Statsd\Client
+     */
+    protected $metric = FALSE;
+
+    protected $prefixesWithDash = [
+        'highloaded-address',
+        'top_tokens-by-period-volume',
+        'top_tokens-by-current-volume',
+        'block-txs',
+        'rates-history',
+        'cap-history',
+        'tokens',
+        'lastBlock',
+        'top_tokens_totals',
+        'tokens-simple'
+    ];
+
+    /**
      * Constructor.
      *
      * @param string  $path  Cache files path
@@ -113,8 +131,14 @@ class evxCache {
             $this->driver = $driver;
         }
         if (!empty($aConfig['statsd'])) {
-            $connection = new \Domnikl\Statsd\Connection\UdpSocket($aConfig['statsd']['host'], $aConfig['statsd']['port']);
+            $connection = new \Domnikl\Statsd\Connection\UdpSocket(
+                $aConfig['statsd']['host'],
+                $aConfig['statsd']['port'],
+                isset($aConfig['statsd']['timeout']) ? $aConfig['statsd']['timeout'] : 0.5,
+                isset($aConfig['statsd']['persist']) ? $aConfig['statsd']['persist'] : true
+            );
             $this->metric = new \Domnikl\Statsd\Client($connection, $aConfig['statsd']['prefix']);
+
         }
 
         $this->useLocks = $useLocks;
@@ -139,6 +163,34 @@ class evxCache {
                 $this->oDriver = $rc;
             }catch(\Exception $e){
                 die($e->getMessage());
+            }
+        }
+    }
+
+    protected function getPrefixByKeys($method, $key) {
+        if (!$this->metric) {
+            return $method . '.' . $key;
+        }
+        foreach ($this->prefixesWithDash as $prefix) {
+            if (strpos($key, $prefix) === 0) {
+                return $method . '.' . $prefix;
+            }
+        }
+        return $method . '.' . explode('-', $key)[0];
+    }
+
+    protected function startTiming($prefix) {
+        if ($this->metric) {
+            $this->metric->startTiming($prefix);
+        }
+    }
+
+    protected function stopTiming($prefix, $size = false) {
+        if ($this->metric) {
+            $this->metric->endTiming($prefix);
+            if ($size) {
+                // I know that is not a timing but statsd make for timing min max
+                $this->metric->timing('size.' . $prefix , $size);
             }
         }
     }
@@ -187,9 +239,11 @@ class evxCache {
      * @param mixed   $data       Data to store
      */
     public function save($entryName, $data, $nonExpiration = FALSE){
-        Metrics::startCacheTiming('set', $entryName);
+        $metricPrefix = $this->getPrefixByKeys('set', $entryName);
+        $this->startTiming($metricPrefix);
         $saveRes = false;
         $this->store($entryName, $data);
+        $size = false;
         switch($this->driver){
             case 'redis':
             case 'memcached':
@@ -210,10 +264,12 @@ class evxCache {
                 $aCachedData = array('lifetime' => $lifetime, 'data' => $data, 'lock' => true);
                 if('redis' == $this->driver){
                     $saveOptions = JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE | JSON_PARTIAL_OUTPUT_ON_ERROR;
+                    $serializedCashData = json_encode($aCachedData, $saveOptions);
+                    $size = strlen($serializedCashData);
                     if($nonExpiration){
-                        $saveRes = $this->oDriver->set($entryName, json_encode($aCachedData, $saveOptions));
+                        $saveRes = $this->oDriver->set($entryName, $serializedCashData);
                     }else{
-                        $saveRes = $this->oDriver->set($entryName, json_encode($aCachedData, $saveOptions), 'ex', $ttl);
+                        $saveRes = $this->oDriver->set($entryName, $serializedCashData, 'ex', $ttl);
                     }
                     if('OK' !== (string)$saveRes){
                         error_log("Write data to redis failed: " . $saveRes . " Data: " . json_encode($aCachedData) . " TTL: " . $ttl);
@@ -229,11 +285,12 @@ class evxCache {
                 $filename = $this->path . '/' . $entryName . ".tmp";
                 //@unlink($filename);
                 $json = json_encode($data, JSON_PRETTY_PRINT);
+                $size = strlen($json);
                 $saveRes = !!file_put_contents($filename, $json);
                 break;
         }
         if($this->useLocks) $this->deleteLock($entryName);
-        Metrics::writeCacheTiming('set', $entryName, strlen(json_encode($data)));
+        $this->stopTiming($metricPrefix, $size);
         return $saveRes;
     }
 
@@ -311,11 +368,19 @@ class evxCache {
      * @return mixed
      */
     public function loadCachedData($entryName, $default = NULL, $cacheLifetime = FALSE){
-        Metrics::startCacheTiming('get', $entryName);
+        $prefix = $this->getPrefixByKeys('get', $entryName);
+        $this->startTiming($prefix);
         $result = array('data' => $default, 'expired' => FALSE);
         $file = ('file' === $this->driver);
+        $size = false;
         if('memcached' === $this->driver || 'redis' === $this->driver){
-            $memcachedData = ('redis' == $this->driver) ? json_decode($this->oDriver->get($entryName), TRUE) : $this->oDriver->get($entryName);
+            if ('redis' == $this->driver) {
+                $cachedData = $this->oDriver->get($entryName);
+                $size = strlen($cachedData);
+                $memcachedData = json_decode($cachedData, TRUE);
+            } else {
+                $memcachedData = $this->oDriver->get($entryName);
+            }
             if($memcachedData && isset($memcachedData['lifetime']) && isset($memcachedData['data'])){
                 $result['data'] = $memcachedData['data'];
                 if($memcachedData['lifetime'] > 0 && $memcachedData['lifetime'] < time()){
@@ -343,12 +408,13 @@ class evxCache {
                 }
                 if(!$isFileExpired || !$result['data'] || $result['expired']){
                     $contents = @file_get_contents($filename);
+                    $size = strlen($contents);
                     $result['data'] = json_decode($contents, TRUE);
                     $result['expired'] = $isFileExpired;
                 }
             }
         }
-        Metrics::writeCacheTiming('get', $entryName, strlen(json_encode($result)));
+        $this->stopTiming($prefix, $size);
         return $result;
     }
 
