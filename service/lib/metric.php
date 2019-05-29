@@ -105,6 +105,7 @@ class Metrics {
                     $statsd->timing($prefix, $value);
                 }
             }
+            self::$timings = [];
             $statsd->endBatch();
         }
     }
