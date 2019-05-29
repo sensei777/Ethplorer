@@ -2,21 +2,31 @@
 
 class Metrics {
 
-    const STATSD_CACHE_PREFIX = 'cache';
+    const STATSD_REDIS_PREFIX = 'redis';
 
     const STATSD_API_METHOD_PREFIX = 'api-method';
 
     /**
      * @var bool|\Domnikl\Statsd\Client
      */
-    static protected $metric = FALSE;
+    static protected $metric = false;
+
+    static protected $timings = [];
+
+    static protected $startTimings = [];
+
+    static protected $apiMethodName = '-';
+
+    static protected $statsd = false;
+
+    static protected $statsdOptions = false;
 
     private function __construct() {}
 
     /**
      * @var array
      */
-    static protected $cachePrefixesWithDash = [
+    static protected $redisPrefixesWithDash = [
         'highloaded-address',
         'top_tokens-by-period-volume',
         'top_tokens-by-current-volume',
@@ -29,44 +39,124 @@ class Metrics {
         'tokens-simple'
     ];
 
-    static public function initMetric(array $statsd) {
-        static::$metric = new \Domnikl\Statsd\Client(
-            new \Domnikl\Statsd\Connection\UdpSocket($statsd['host'], $statsd['port']),
-            $statsd['prefix']
-        );
+    static public function setApiMethodName($name) {
+        self::$apiMethodName = $name;
     }
 
-    static protected function getCachePrefix($method, $cacheKey) {
-        foreach (static::$cachePrefixesWithDash as $prefix) {
-            if (strpos($cacheKey, $prefix) === 0) {
+    static protected function setTiming($prefix, $value) {
+        if(empty(self::$timings[$prefix])) {
+            self::$timings[$prefix] = [];
+        }
+        self::$timings[$prefix][] = $value;
+    }
+
+    protected function startTiming($prefix) {
+        self::$startTimings[$prefix] = microtime(true);
+    }
+
+    protected function stopTiming($prefix) {
+        if (!empty(self::$startTimings[$prefix])) {
+            self::setTiming($prefix, microtime(true) - self::$startTimings[$prefix]);
+            unset(self::$startTimings[$prefix]);
+        }
+    }
+
+    static public function initMetric(array $statsdOptions) {
+        self::$metric = true;
+        self::$statsdOptions = $statsdOptions;
+        self::$statsd = false;
+        register_shutdown_function(function() {
+            if (!(empty(self::$metric))) {
+                $time = microtime(true);
+                self::sendMetrics();
+                $statsd = self::getConnections();
+                if (!empty($statsd)) {
+                    $statsd->timing('statsd.metric-send', microtime(true) - $time);
+                }
+            }
+        });
+    }
+
+    static protected function getConnections() {
+        if (empty(self::$statsd) && !empty(self::$statsdOptions)) {
+            $time = microtime(true);
+            $connection = new \Domnikl\Statsd\Connection\UdpSocket(
+                self::$statsdOptions['host'],
+                self::$statsdOptions['port'],
+                isset(self::$statsdOptions['timeout']) ? self::$statsdOptions['timeout'] : 0.5,
+                isset(self::$statsdOptions['persist']) ? self::$statsdOptions['persist'] : true
+            );
+            self::$statsd = new \Domnikl\Statsd\Client($connection, self::$statsdOptions['prefix']);
+            self::setTiming('statsd.connection-time', microtime(true) - $time);
+        }
+        return self::$statsd;
+    }
+
+    static public function sendMetrics() {
+        if (!(empty(self::$metric))) {
+            $timings = self::$timings;
+            $statsd = self::getConnections();
+            if (empty($statsd)) {
+                return;
+            }
+            $statsd->startBatch();
+            foreach ($timings as $prefix => $metricValues) {
+                foreach ($metricValues as $value) {
+                    $statsd->timing($prefix, $value);
+                }
+            }
+            $statsd->endBatch();
+        }
+    }
+
+    static protected function getRedisKeyPrefix($redisKey) {
+        foreach (self::$redisPrefixesWithDash as $prefix) {
+            if (strpos($redisKey, $prefix) === 0) {
                 return $prefix;
             }
         }
-        return explode('-', $cacheKey)[0];
+        return explode('-', $redisKey)[0];
     }
 
-    static public function startCacheTiming($method, $cacheKey) {
-        if (static::$metric) {
-            $cachePrefix = static::getCachePrefix($method, $cacheKey);
-            static::$metric->startTiming(sprintf('%s.%s.%s', self::STATSD_CACHE_PREFIX, $method, $cachePrefix));
+    static public function startRedisTiming($method, $redisKey) {
+        if (self::$metric) {
+            $redisKeyPrefix = self::getRedisKeyPrefix($redisKey);
+            self::startTiming(sprintf(
+                '%s.%s.times.%s',
+                self::STATSD_REDIS_PREFIX,
+                $method,
+                $redisKeyPrefix
+            ));
         }
     }
 
-    static public function writeCacheTiming($method, $cacheKey, $size = null) {
-        if (static::$metric) {
-            $cachePrefix = static::getCachePrefix($method, $cacheKey);
-            static::$metric->endTiming(sprintf('%s.%s.%s', self::STATSD_CACHE_PREFIX, $method, $cachePrefix));
+    static public function writeRedisTiming($method, $redisKey, $size = null) {
+        if (self::$metric) {
+            $redisKeyPrefix = self::getRedisKeyPrefix($redisKey);
+            self::stopTiming(
+                sprintf(
+                    '%s.%s.times.%s',
+                    self::STATSD_REDIS_PREFIX,
+                    $method,
+                    $redisKeyPrefix
+                ));
             if ($size) {
-                static::$metric->timing(sprintf('%s.%s.size.%s', self::STATSD_CACHE_PREFIX, $method, $cacheKey), $size);
+                self::setTiming(
+                    sprintf(
+                        '%s.%s.size.%s',
+                        self::STATSD_REDIS_PREFIX,
+                        $method,
+                        $redisKeyPrefix
+                    ), $size);
             }
         }
     }
 
     static public function writeApiMethodTiming($method, $time, $memUsage, $peakMemUsage) {
-        if (static::$metric) {
-            static::$metric->timing(sprintf('%s.%s', self::STATSD_API_METHOD_PREFIX, $method), $time);
-            static::$metric->timing(sprintf('%s.mem.%s', self::STATSD_API_METHOD_PREFIX, $method), $memUsage);
-            static::$metric->timing(sprintf('%s.mem-peak.%s', self::STATSD_API_METHOD_PREFIX, $method), $peakMemUsage);
+        if (self::$metric) {
+            self::setTiming(sprintf('%s.times.%s', self::STATSD_API_METHOD_PREFIX, $method), $time);
+            self::setTiming(sprintf('%s.mem.%s', self::STATSD_API_METHOD_PREFIX, $method), $memUsage);
+            self::setTiming(sprintf('%s.mem-peak.%s', self::STATSD_API_METHOD_PREFIX, $method), $peakMemUsage);
         }
     }
 }

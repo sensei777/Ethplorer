@@ -101,6 +101,7 @@ class ethplorerController {
                 }
             }
         }
+        Metrics::setApiMethodName($command);
         $this->command = $command;
     }
 
@@ -125,6 +126,7 @@ class ethplorerController {
             $memUsageRaw,
             $peakMemUsageRaw
         );
+        Metrics::sendMetrics();
         file_put_contents($logsDir . '/api-request.log', $logStr, FILE_APPEND);
     }
 
