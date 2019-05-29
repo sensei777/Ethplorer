@@ -427,6 +427,9 @@ Ethplorer = {
             oOperation.formatted = true;
         }
         var value = oOperation.value;
+        if(oToken.symbol && (value.toString().indexOf(oToken.symbol) < 0)){
+            value = value + ' ' + oToken.symbol;
+        }
         if(valFloat && oToken.price && oToken.price.rate){
             value = value + '<br><span class="tx-value-price">$&nbsp;' + Ethplorer.Utils.formatNum(oToken.price.rate * valFloat, true, 2, true, true) + '</span>';
             value += getHistDiffPriceString(op.usdPrice, oToken.price.rate);
@@ -693,6 +696,9 @@ Ethplorer = {
                 Ethplorer.fillValues('transfer', txData, ['operation', 'operation.from', 'operation.to']);
                 if(oOperation.value){
                     var value = oOperation.value;
+                    if(oToken.symbol && (value.toString().indexOf(oToken.symbol) < 0)){
+                        value = value + ' ' + oToken.symbol;
+                    }
                     if(valFloat && oToken.price && oToken.price.rate){
                         value = value + '<br><span class="tx-value-price">$&nbsp;' + Ethplorer.Utils.formatNum(oToken.price.rate * valFloat, true, 2, true, true) + '</span>';
                         value += getHistDiffPriceString(oOperation.usdPrice, oToken.price.rate);
