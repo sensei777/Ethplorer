@@ -20,14 +20,6 @@ class RedisWrap {
         return $res;
     }
 
-    public function set($key, $value) {
-        $size = strlen($value);
-        Metrics::startRedisTiming('set', $key);
-        $res = $this->redis->set($key, $value);
-        Metrics::writeRedisTiming('set', $key, $size);
-        return $res;
-    }
-
     public function del($key) {
         Metrics::startRedisTiming('del', $key);
         $res = $this->redis->del($key);
@@ -37,6 +29,13 @@ class RedisWrap {
 
     public function __call($name, $arguments)
     {
+        if ($name === 'set') {
+            $size = strlen($arguments[1]);
+            Metrics::startRedisTiming('set', $arguments[0]);
+            $res = call_user_func_array([$this->redis, $name], $arguments);
+            Metrics::writeRedisTiming('set', $arguments[0], $size);
+            return $res;
+        }
         return call_user_func_array([$this->redis, $name], $arguments);
     }
 }
