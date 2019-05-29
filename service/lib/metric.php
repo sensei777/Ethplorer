@@ -6,9 +6,6 @@ class Metrics {
 
     const STATSD_API_METHOD_PREFIX = 'api-method';
 
-    /**
-     * @var bool|\Domnikl\Statsd\Client
-     */
     static protected $metric = false;
 
     static protected $timings = [];
@@ -22,6 +19,10 @@ class Metrics {
     static protected $statsdOptions = false;
 
     private function __construct() {}
+
+    static protected $meticPrefixWithCountPerRequest = [
+        self::STATSD_REDIS_PREFIX
+    ];
 
     /**
      * @var array
@@ -101,6 +102,23 @@ class Metrics {
             }
             $statsd->startBatch();
             foreach ($timings as $prefix => $metricValues) {
+                if (count($metricValues)) {
+                    foreach (self::$meticPrefixWithCountPerRequest as $prefixForCounting) {
+                        if (
+                            strpos($prefix, $prefixForCounting) === 0 &&
+                            strpos($prefix, '.times.') !== -1
+                        ) {
+                            $statsd->timing(
+                                str_replace(
+                                    '.times.',
+                                    '.cnt-per-req.' . self::$apiMethodName . '.',
+                                    $prefix
+                                ),
+                                count($metricValues)
+                            );
+                        }
+                    }
+                }
                 foreach ($metricValues as $value) {
                     $statsd->timing($prefix, $value);
                 }
