@@ -97,6 +97,8 @@ class Metrics {
 
     static public function sendMetrics() {
         if (!(empty(self::$metric))) {
+            $time = microtime(true);
+            $endTime = false;
             self::sendAllTimingWithPrefix();
             if (
                 isset(self::$statsdOptions['duplicate_metrics_with_hostname']) &&
@@ -105,8 +107,20 @@ class Metrics {
                 $hostname = explode('.', gethostname())[0];
                 if (!empty($hostname)) {
                     self::sendAllTimingWithPrefix($hostname);
+                    $endTime = microtime(true) - $time;
+                    self::$statsd->timing(
+                        $hostname . '.statsd.metric-send',
+                        $endTime
+                    );
                 }
             }
+            if (!$endTime) {
+                $endTime = microtime(true) - $time;
+            }
+            self::$statsd->timing(
+                self::STATSD_TOTAL_SERVER_NAME . '.statsd.metric-send',
+                $endTime
+            );
             self::$timings = [];
         }
     }
