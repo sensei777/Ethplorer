@@ -6,6 +6,8 @@ class Metrics {
 
     const STATSD_API_METHOD_PREFIX = 'api-method';
 
+    const STATSD_TOTAL_SERVER_NAME = 'total-servers';
+
     static protected $metric = false;
 
     static protected $timings = [];
@@ -95,37 +97,50 @@ class Metrics {
 
     static public function sendMetrics() {
         if (!(empty(self::$metric))) {
-            $timings = self::$timings;
-            $statsd = self::getConnections();
-            if (empty($statsd)) {
-                return;
-            }
-            $statsd->startBatch();
-            foreach ($timings as $prefix => $metricValues) {
-                if (count($metricValues)) {
-                    foreach (self::$meticPrefixWithCountPerRequest as $prefixForCounting) {
-                        if (
-                            strpos($prefix, $prefixForCounting) === 0 &&
-                            strpos($prefix, '.times.') !== -1
-                        ) {
-                            $statsd->timing(
-                                str_replace(
-                                    '.times.',
-                                    '.cnt-per-req.' . self::$apiMethodName . '.',
-                                    $prefix
-                                ),
-                                count($metricValues)
-                            );
-                        }
-                    }
-                }
-                foreach ($metricValues as $value) {
-                    $statsd->timing($prefix, $value);
+            self::sendAllTimingWithPrefix();
+            if (
+                isset(self::$statsdOptions['duplicate_metrics_with_hostname']) &&
+                self::$statsdOptions['duplicate_metrics_with_hostname']
+            ) {
+                $hostname = explode('.', gethostname())[0];
+                if (!empty($hostname)) {
+                    self::sendAllTimingWithPrefix($hostname);
                 }
             }
             self::$timings = [];
-            $statsd->endBatch();
         }
+    }
+
+    static public function sendAllTimingWithPrefix($serverPrefix = self::STATSD_TOTAL_SERVER_NAME) {
+        $timings = self::$timings;
+        $statsd = self::getConnections();
+        if (empty($statsd)) {
+            return;
+        }
+        $statsd->startBatch();
+        foreach ($timings as $prefix => $metricValues) {
+            if (count($metricValues)) {
+                foreach (self::$meticPrefixWithCountPerRequest as $prefixForCounting) {
+                    if (
+                        strpos($prefix, $prefixForCounting) === 0 &&
+                        strpos($prefix, '.times.') !== -1
+                    ) {
+                        $statsd->timing(
+                            str_replace(
+                                '.times.',
+                                '.cnt-per-req.' . self::$apiMethodName . '.',
+                                $serverPrefix . '.' . $prefix
+                            ),
+                            count($metricValues)
+                        );
+                    }
+                }
+            }
+            foreach ($metricValues as $value) {
+                $statsd->timing($serverPrefix . '.' . $prefix, $value);
+            }
+        }
+        $statsd->endBatch();
     }
 
     static protected function getRedisKeyPrefix($redisKey) {
