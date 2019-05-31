@@ -1050,7 +1050,7 @@ class Ethplorer {
             return $this->aTokens;
         }
 
-        $useFileCache = false;
+        $useFileCache = true;
         $tokensFile = dirname(__FILE__) . self::TOKENS_FILE_CACHE;
         if($useFileCache && file_exists($tokensFile)){
             $aResult = include_once $tokensFile;
