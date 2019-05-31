@@ -46,7 +46,7 @@ class Ethplorer {
 
     const SHOW_TX_TOKENS = 'tokens';
 
-    const TOKENS_FILE_CACHE = '/../cache.tokens.php';
+    const TOKENS_FILE_CACHE = '/../shared/cache.tokens.php';
 
     /**
      * Settings
@@ -1129,8 +1129,8 @@ class Ethplorer {
                 $tokensFileCache = '<?php'. "\n" . 'return ';
                 $tokensFileCache .= $this->varExportMin($aResult);
                 $tokensFileCache .= ';' . "\n";
-                $this->saveFile(dirname(__FILE__) . self::TOKENS_FILE_CACHE, $tokensFileCache);
-                $this->_cliDebug("Tokens file cache saved.");
+                $res = $this->saveFile(dirname(__FILE__) . self::TOKENS_FILE_CACHE, $tokensFileCache);
+                $this->_cliDebug($res ? 'Tokens file cache saved.' : 'Error saving tokens file cache.');
             }
 
             evxProfiler::checkpoint('getTokens', 'FINISH');
