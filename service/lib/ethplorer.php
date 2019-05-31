@@ -1129,7 +1129,8 @@ class Ethplorer {
                 $tokensFileCache = '<?php'. "\n" . 'return ';
                 $tokensFileCache .= $this->varExportMin($aResult);
                 $tokensFileCache .= ';' . "\n";
-                file_put_contents(dirname(__FILE__) . self::TOKENS_FILE_CACHE, $tokensFileCache);
+                $this->saveFile(dirname(__FILE__) . self::TOKENS_FILE_CACHE, $tokensFileCache);
+                $this->_cliDebug("Tokens file cache saved.");
             }
 
             evxProfiler::checkpoint('getTokens', 'FINISH');
@@ -3645,6 +3646,14 @@ class Ethplorer {
         }else{
             return var_export($input, true);
         }
+    }
+
+    protected function saveFile($file, $content){
+        $res = FALSE;
+        if(FALSE !== file_put_contents($file . '.tmp', $content)){
+            $res = rename($file . '.tmp', $file);
+        }
+        return $res;
     }
 
     protected function log($file, $message, $log = true){
