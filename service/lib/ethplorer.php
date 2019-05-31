@@ -3639,7 +3639,7 @@ class Ethplorer {
         if(is_array($input)){
             $buffer = [];
             foreach($input as $key => $value){
-                $buffer[] = var_export($key, true) . "=>" . varExportMin($value);
+                $buffer[] = var_export($key, true) . "=>" . $this->varExportMin($value);
             }
             return "[" . implode(",", $buffer) . "]";
         }else{
