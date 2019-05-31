@@ -1055,6 +1055,7 @@ class Ethplorer {
         if($useFileCache && file_exists($tokensFile)){
             $aResult = include_once $tokensFile;
         }else{
+            $this->log('get-tokens', 'Reading tokens from redis', TRUE);
             $aResult = $this->oCache->get('tokens', false, true);
         }
 
