@@ -1123,7 +1123,6 @@ class Ethplorer {
             if(isset($aResult[self::ADDRESS_ETH])){
                 unset($aResult[self::ADDRESS_ETH]);
             }
-            $this->oCache->save('tokens', $aResult);
 
             if($useFileCache){
                 $tokensFileCache = '<?php'. "\n" . 'return ';
@@ -1131,6 +1130,8 @@ class Ethplorer {
                 $tokensFileCache .= ';' . "\n";
                 $res = $this->saveFile(dirname(__FILE__) . self::TOKENS_FILE_CACHE, $tokensFileCache);
                 $this->_cliDebug($res ? 'Tokens file cache saved.' : 'Error saving tokens file cache.');
+            }else{
+                $this->oCache->save('tokens', $aResult);
             }
 
             evxProfiler::checkpoint('getTokens', 'FINISH');
@@ -1138,7 +1139,6 @@ class Ethplorer {
         $this->aTokens = $aResult;
         return $aResult;
     }
-
 
     public function getTokenHoldersCount($address, $useFilter = TRUE){
         evxProfiler::checkpoint('getTokenHoldersCount', 'START', 'address=' . $address);
