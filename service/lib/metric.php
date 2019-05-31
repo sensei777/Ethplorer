@@ -200,11 +200,12 @@ class Metrics {
         }
     }
 
-    static public function writeApiMethodTiming($method, $time, $memUsage, $peakMemUsage) {
+    static public function writeApiMethodTiming($method, $time, $memUsage, $peakMemUsage, $resLength) {
         if (self::$metric) {
             self::setTiming(sprintf('%s.times.%s', self::STATSD_API_METHOD_PREFIX, $method), $time);
             self::setTiming(sprintf('%s.mem.%s', self::STATSD_API_METHOD_PREFIX, $method), $memUsage);
             self::setTiming(sprintf('%s.mem-peak.%s', self::STATSD_API_METHOD_PREFIX, $method), $peakMemUsage);
+            self::setTiming(sprintf('%s.res-len.%s', self::STATSD_API_METHOD_PREFIX, $method), $resLength);
         }
     }
 }
