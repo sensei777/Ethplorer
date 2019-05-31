@@ -1047,7 +1047,16 @@ class Ethplorer {
         if(FALSE !== $this->aTokens){
             return $this->aTokens;
         }
-        $aResult = $this->oCache->get('tokens', false, true);
+
+        $useFileCache = false;
+        $tokensFile = dirname(__FILE__) . '/../cache.tokens.php';
+        if($useFileCache && file_exists($tokensFile)){
+            $aResult = include_once $tokensFile;
+            $updateCache = false;
+        }else{
+            $aResult = $this->oCache->get('tokens', false, true);
+        }
+
         // Allow generating cache only from cron jobs
         if(!$this->getTokensCacheCreation && ($updateCache/* || (false === $aResult)*/)){
             // Recursion protection
