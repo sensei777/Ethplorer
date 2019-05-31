@@ -27,6 +27,7 @@ class ethplorerController {
     protected $defaults;
     protected $startTime;
     protected $cacheState = '';
+    protected $responseLength = 0;
 
     protected $APIErrors = [
         'API_KEY_NOT_FOUND' => [
@@ -124,7 +125,8 @@ class ethplorerController {
             $this->command,
             microtime(TRUE) - $this->startTime,
             $memUsageRaw,
-            $peakMemUsageRaw
+            $peakMemUsageRaw,
+            $this->responseLength
         );
         Metrics::sendMetrics();
         file_put_contents($logsDir . '/api-request.log', $logStr, FILE_APPEND);
@@ -153,7 +155,9 @@ class ethplorerController {
             $result['debug'] = $this->db->getDebugData();
         }
         http_response_code($statusCode);
-        echo json_encode($result, JSON_UNESCAPED_SLASHES);
+        $res = json_encode($result, JSON_UNESCAPED_SLASHES);
+        $this->responseLength = strlen($res);
+        echo $res;
         gc_collect_cycles();
         die();
     }
