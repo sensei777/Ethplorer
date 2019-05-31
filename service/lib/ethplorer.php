@@ -46,6 +46,8 @@ class Ethplorer {
 
     const SHOW_TX_TOKENS = 'tokens';
 
+    const TOKENS_FILE_CACHE = '/../cache.tokens.php';
+
     /**
      * Settings
      *
@@ -1049,10 +1051,9 @@ class Ethplorer {
         }
 
         $useFileCache = false;
-        $tokensFile = dirname(__FILE__) . '/../cache.tokens.php';
+        $tokensFile = dirname(__FILE__) . self::TOKENS_FILE_CACHE;
         if($useFileCache && file_exists($tokensFile)){
             $aResult = include_once $tokensFile;
-            $updateCache = false;
         }else{
             $aResult = $this->oCache->get('tokens', false, true);
         }
@@ -1123,6 +1124,14 @@ class Ethplorer {
                 unset($aResult[self::ADDRESS_ETH]);
             }
             $this->oCache->save('tokens', $aResult);
+
+            if($useFileCache){
+                $tokensFileCache = '<?php'. "\n" . 'return ';
+                $tokensFileCache .= $this->varExportMin($aResult);
+                $tokensFileCache .= ';' . "\n";
+                file_put_contents(dirname(__FILE__) . self::TOKENS_FILE_CACHE, $tokensFileCache);
+            }
+
             evxProfiler::checkpoint('getTokens', 'FINISH');
         }
         $this->aTokens = $aResult;
@@ -3624,6 +3633,18 @@ class Ethplorer {
             'symbol' => 'ETH',
             'decimals' => 18
         );
+    }
+
+    protected function varExportMin($input){
+        if(is_array($input)){
+            $buffer = [];
+            foreach($input as $key => $value){
+                $buffer[] = var_export($key, true) . "=>" . varExportMin($value);
+            }
+            return "[" . implode(",", $buffer) . "]";
+        }else{
+            return var_export($input, true);
+        }
     }
 
     protected function log($file, $message, $log = true){
