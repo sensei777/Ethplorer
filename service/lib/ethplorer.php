@@ -146,6 +146,13 @@ class Ethplorer {
     protected $memUsage = [];
 
     /**
+     * Token current prices in-memory cache
+     *
+     * @var array
+     */
+    protected $aRates = [];
+
+    /**
      * Constructor.
      *
      * @throws Exception
@@ -2729,6 +2736,19 @@ class Ethplorer {
         return $result;
     }
 
+    /**
+     * Reads rates cache to local variable.
+     */
+    protected function getRatesCached($update = FALSE){
+        if(empty($this->aRates) || $update){
+            $this->aRates = $this->oCache->get('rates', false, true);
+            if(!is_array($this->aRates)){
+                $this->aRates = [];
+            }
+        }
+        return $this->aRates;
+    }
+    
     public function getTokenPrice($address, $updateCache = FALSE){
         // evxProfiler::checkpoint('getTokenPrice', 'START', 'address=' . $address . ', updateCache=' . ($updateCache ? 'TRUE' : 'FALSE'));
         $result = FALSE;
@@ -2746,12 +2766,8 @@ class Ethplorer {
         $knownPrice = isset($this->aSettings['updateRates']) && in_array($address, $this->aSettings['updateRates']);
 
         if(!$isHidden && $knownPrice){
-            $cache = 'rates';
-            $rates = $this->oCache->get($cache, false, true);
+            $this->getRatesCached();
             if($updateCache){
-                if(!is_array($rates)){
-                    $rates = array();
-                }
                 if(isset($this->aSettings['currency'])){
                     $method = 'getCurrencyCurrent';
                     $params = array($address, 'USD');
@@ -2773,13 +2789,13 @@ class Ethplorer {
                                 $result['diff30d'] = $pdiff;
                             }
                         }
-                        $rates[$address] = $result;
-                        $this->oCache->save($cache, $rates);
+                        $this->aRates[$address] = $result;
+                        $this->oCache->save('rates', $this->aRates);
                     }
                 }
             }
-            if(is_array($rates) && isset($rates[$address])){
-                $result = $rates[$address];
+            if(is_array($this->aRates) && isset($this->aRates[$address])){
+                $result = $this->aRates[$address];
             }
         }
         // evxProfiler::checkpoint('getTokenPrice', 'FINISH');
@@ -2787,11 +2803,7 @@ class Ethplorer {
     }
 
     public function getAllTokenPrice(){
-        $cache = 'rates';
-        $rates = $this->oCache->get($cache, false, true);
-        if(!is_array($rates)){
-            $rates = array();
-        }
+        $this->getRatesCached();
         if(isset($this->aSettings['currency'])){
             $result = $this->_jsonrpcall($this->aSettings['currency'], 'getCurrentPrices', array());
             if($result && is_array($result)){
@@ -2813,16 +2825,16 @@ class Ethplorer {
                                 }
                             }
                             unset($aPriceData['address']);
-                            $rates[$address] = $aPriceData;
+                            $this->aRates[$address] = $aPriceData;
                         }
                     }
                 }
-                if(is_array($rates) && sizeof($rates)){
-                    $this->oCache->save($cache, $rates);
+                if(is_array($this->aRates) && sizeof($this->aRates)){
+                    $this->oCache->save('rates', $this->aRates);
                 }
             }
         }
-        return $rates;
+        return $this->aRates;
     }
 
     public function getTokenPriceHistory($address, $period = 0, $type = 'daily', $updateCache = FALSE, $updateFullHistory = FALSE){
