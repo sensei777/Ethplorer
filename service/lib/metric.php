@@ -36,10 +36,11 @@ class Metrics {
         'block-txs',
         'rates-history',
         'cap-history',
+        'tokens_count',
+        'tokens-simple',
         'tokens',
         'lastBlock',
-        'top_tokens_totals',
-        'tokens-simple'
+        'top_tokens_totals'
     ];
 
     static public function setApiMethodName($name) {
