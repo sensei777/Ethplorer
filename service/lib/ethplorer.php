@@ -1055,6 +1055,7 @@ class Ethplorer {
         if($useFileCache && file_exists($tokensFile)){
             $aResult = include_once $tokensFile;
         }else{
+            $useFileCache = false;
             $this->log('get-tokens', 'Reading tokens from redis', TRUE);
             $aResult = $this->oCache->get('tokens', false, true);
         }
@@ -1132,6 +1133,7 @@ class Ethplorer {
                 $res = $this->saveFile(dirname(__FILE__) . self::TOKENS_FILE_CACHE, $tokensFileCache);
                 $this->_cliDebug($res ? 'Tokens file cache saved.' : 'Error saving tokens file cache.');
             }else{
+                $this->log('get-tokens', 'Saving tokens to redis', TRUE);
                 $this->oCache->save('tokens', $aResult);
             }
 
