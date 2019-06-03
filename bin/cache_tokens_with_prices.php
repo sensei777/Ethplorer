@@ -53,7 +53,9 @@ if($jsonResponse){
             }
             $confPrices .= '];'. "\n";
             if($numTokens > MIN_TOKENS_NUM){
-                file_put_contents(dirname(__FILE__) . '/../service/config.prices.php', $confPrices);
+                $file = dirname(__FILE__) . '/../service/config.prices.php';
+                file_put_contents($file . '.tmp', $confPrices);
+                rename($file . '.tmp', $file);
             }
         }
     }catch(\Exception $e){
