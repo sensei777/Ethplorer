@@ -1060,7 +1060,9 @@ class Ethplorer {
         $useFileCache = true;
         $tokensFile = dirname(__FILE__) . self::TOKENS_FILE_CACHE;
         if($useFileCache && file_exists($tokensFile)){
-            if(!opcache_is_script_cached($tokensFile)) $this->log('get-tokens', $tokensFile . ' is not cached in OPCache', TRUE);
+            if(!opcache_is_script_cached($tokensFile)){
+                $this->log('get-tokens', $tokensFile . ' is not cached in OPCache. Status: ' . print_r(opcache_get_status(TRUE), TRUE), TRUE);
+            }
             $aResult = include_once $tokensFile;
         }else{
             $useFileCache = false;
