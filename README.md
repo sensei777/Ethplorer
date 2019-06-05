@@ -1,9 +1,10 @@
 # Ethplorer - Ethereum Tokens Explorer
 
-Easy viewer for investors and ICOs
-API and Widgets for developers
+Your friendly gate into the Ethereum tokens world
 
 Provides API, TOP charts, Ethereum Tokens Index, Widgets for websites.
+
+Track portfolio for any Ethereum address with historical balance charts and transactions. Complete address analytics from historical balances to the volumes of trading, operations and transfers per token per day. Explore marketing possibilities with token API and display widgets.
 
 [Online version at Ethplorer.io](https://ethplorer.io)
 
