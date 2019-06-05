@@ -15,30 +15,19 @@
  * limitations under the License.
  */
 
-die;
-
 require dirname(__FILE__) . '/../service/lib/ethplorer.php';
 $aConfig = require_once dirname(__FILE__) . '/../service/config.php';
 
 $startTime = microtime(TRUE);
 echo "\n[".date("Y-m-d H:i:s")."], Started.";
 
-$numPrices = 0;
-$maxTimeGetPrice = 0;
-
 $es = Ethplorer::db($aConfig);
-$lock = $es->createProcessLock('prices.lock', 600);
-foreach($aConfig['updateRates'] as $address){
-    $startGetPrice = microtime(TRUE);
-    $es->getCache()->clearLocalCache();
-    $es->getTokenPrice($address, TRUE);
-    $timeGetPrice = round(microtime(TRUE) - $startGetPrice, 4);
-    echo "\n[".date("Y-m-d H:i:s")."], Get price for address: " . $address . " Time : " . $timeGetPrice;
-
-    $numPrices++;
-    if($timeGetPrice > $maxTimeGetPrice) $maxTimeGetPrice = $timeGetPrice;
-}
+$lock = $es->createProcessLock('all.prices.lock', 180);
+$es->getCache()->clearLocalCache();
+$result = $es->getAllTokenPrice();
+// get THBEX price
+$es->getTokenPrice('0xff71cb760666ab06aa73f34995b42dd4b85ea07b', TRUE);
 unset($lock);
 
 $ms = round(microtime(TRUE) - $startTime, 4);
-echo "\n[".date("Y-m-d H:i:s")."], Finished, {$ms} s. Total prices: " . $numPrices . " Max. time : " . $maxTimeGetPrice;
+echo "\n[".date("Y-m-d H:i:s")."], Finished, {$ms} s. Total prices: " . (is_array($result) ? sizeof($result) : 0);

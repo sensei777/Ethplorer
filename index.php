@@ -16,16 +16,27 @@
  */
 $aConfig = require dirname(__FILE__) . '/service/config.php';
 require dirname(__FILE__) . '/service/lib/ethplorer.php';
-$es = Ethplorer::db(array());
+require_once  dirname(__FILE__) . '/service/lib/metric.php';
+/**
+ * @var Ethplorer
+ */
+$es = Ethplorer::db($aConfig);
 
-$codeVersion = isset($aConfig['codeVersion']) ? $aConfig['codeVersion'] : "180";
+$codeVersion = isset($aConfig['codeVersion']) ? $aConfig['codeVersion'] : "220";
+
+if (!empty($aConfig['statsd'])) {
+    Metrics::initMetric($aConfig['statsd']);
+}
 
 $error = TRUE;
 $header = "";
+$aAddressInfo = array();
+$aTxInfo = array();
 $uri = $_SERVER['REQUEST_URI'];
+$title = '';
 
 // Uri to lowercase
-if(preg_match("/[A-Z]+/", $uri) && (FALSE === strpos($uri, '1dea4'))){
+if(preg_match("/0x[A-Z]+/", $uri) && (FALSE === strpos($uri, '1dea4'))){
     header("Location: " . strtolower($uri));
     die();
 }
@@ -40,11 +51,47 @@ if(3 === count($rParts)){
     if(('tx' === $rParts[1]) && $es->isValidTransactionHash($rParts[2])){
         $header = "Transaction hash: " . $rParts[2];
         $error = FALSE;
+        $aTxInfo = $es->getTransactionInfo($rParts[2]);
+        if(isset($aTxInfo['token']) && isset($aTxInfo['token']['name'])){
+            $title .= $aTxInfo['token']['name'] . ' token transfer';
+            if(isset($aTxInfo['opValue'])){
+                $title .= ' for ' . $aTxInfo['opValue'];
+            }
+            if(isset($aTxInfo['token']['symbol'])){
+                $title .= ' [' . $aTxInfo['token']['symbol'] . ']';
+            }
+            $title .= ' - ' . $rParts[2] . ' - transaction hash | by Ethplorer';
+        }else if(isset($aTxInfo['tx']) && isset($aTxInfo['tx']['value'])){
+            $title .= 'Ethereum transaction for ' . $aTxInfo['tx']['value'] . ' [ETH] - ' . $rParts[2] . ' - transaction hash | by Ethplorer';
+        }
     }
     if(('address' === $rParts[1]) && $es->isValidAddress($rParts[2])){
         $header = "Address: " . $rParts[2];
         $address = $rParts[2];
         $error = FALSE;
+        $aAddressInfo = $es->getAddressInfo($rParts[2]);
+        $checksumAddress = $es->getChecksumAddress($rParts[2]);
+        if(isset($aAddressInfo['token'])){
+            if(isset($aAddressInfo['token']['symbol'])){
+                $title .= '[' . $aAddressInfo['token']['symbol'] . ']';
+            }
+            if(isset($aAddressInfo['token']['name'])){
+                $title .= ' ' . $aAddressInfo['token']['name'];
+                if(strpos($aAddressInfo['token']['name'], ' Token') === false){
+                    $title .= ' Token';
+                }
+                $title .= ' viewer';
+            }
+            if(isset($aAddressInfo['token']['price']) && isset($aAddressInfo['token']['price']['rate'])){
+                $title .= ' and price chart';
+            }
+            $title .= ' - Ethereum contract address ' . $checksumAddress . ' | Ethplorer';
+            $aAddressInfo['title'] = $title;
+        }else if(isset($aAddressInfo['contract'])){
+            $title .= $checksumAddress . ' - ethereum contract explorer - Ethplorer';
+        }else{
+            $title .= $checksumAddress . ' - ethereum address history, charts and balances explorer - Ethplorer';
+        }
     }
     if(('token' === $rParts[1]) && $es->isValidAddress($rParts[2])){
         $header = "Token address: " . $rParts[2];
@@ -52,6 +99,7 @@ if(3 === count($rParts)){
     }
 }
 if($error){
+    header('HTTP/1.0 404 Not Found', true, 404);
     if(isset($rParts[1]) && !$rParts[1]){
         header('Location:/');
         die();
@@ -67,19 +115,46 @@ if(isset($_GET['debug']) && $_GET['debug']){
     $debugEnabled = true;
 }
 
+$withEth = false;
+if((isset($_GET['withEth']) && (bool)$_GET['withEth']) || (isset($_GET['witheth']) && (bool)$_GET['witheth'])){
+    $withEth = true;
+}
+
 $hasNotes = isset($aConfig['adv']) && count($aConfig['adv']);
+
+$sentryURL = false;
+if(isset($aConfig['sentry']) && is_array($aConfig['sentry'])){
+    $aSentry = $aConfig['sentry'];
+    $https = isset($aSentry['https']) ? !!$aSentry['https'] : false;
+    $url = isset($aSentry['url']) ? $aSentry['url'] : false;
+    $key = isset($aSentry['key']) ? $aSentry['key'] : false;
+    if($url && $key){
+        $protocol = $https ? "https" : "http";
+        $sentryURL = $protocol . "://" . $key . "@" . $url;
+    }
+}
+
+function includeLocal($name){
+    if(file_exists(__DIR__ . '/index.' . $name . '.local.php')) require_once(__DIR__ . '/index.' . $name . '.local.php');
+}
 
 $csvExport = '';
 if(is_array($rParts) && isset($rParts[2])){
-    $csvExport = ' <span class="export-csv-spinner"><i class="fa fa-spinner fa-spin"></i> Export...</span><span class="export-csv"><a class="download" rel="nofollow" target="_blank" href="/service/csv.php?data=' . $rParts[2] . '">Export as CSV</a></span>';
+    $csvExport = ' <span class="export-csv-spinner"><i class="fa fa-spinner fa-spin"></i> Export...</span><span class="export-csv"><a class="download" rel="nofollow" target="_blank" href="/service/exportcsv.php?data=' . $rParts[2] . '">Export as CSV</a></span>';
+}
+if(!$title){
+    $title = 'Ethplorer';
+    if($header){
+        $title .= ": " . $header;
+    }
 }
 ?><!DOCTYPE html>
 <html>
 <head>
-    <title>Ethplorer<?php if($header){ echo ": " . $header; } ?></title>
+    <title><?=$title?></title>
     <link rel="stylesheet" href="https://ajax.googleapis.com/ajax/libs/jqueryui/1.11.4/themes/smoothness/jquery-ui.css">
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css">
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.0.13/css/all.css" integrity="sha384-DNOHZ68U8hZfKXOrtjWvjxusGo9WQnrNx2sqG0tfsghAvtVlRW3tvkXWZh58N9jp" crossorigin="anonymous">
     <link rel="stylesheet" href="/css/ethplorer.css?v=<?=$codeVersion?>">
 <?php
     // Load extensions CSS
@@ -105,6 +180,7 @@ if(is_array($rParts) && isset($rParts[2])){
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
     <link rel="icon" type="image/png" href="/favicon-32x32.png" sizes="32x32">
     <link rel="icon" type="image/png" href="/favicon-16x16.png" sizes="16x16">
+<?php if($sentryURL):?><script src="/js/raven.min.js"></script><?php endif; ?>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.2/jquery.min.js"></script>
     <script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.11.4/jquery-ui.min.js"></script>
     <script src="https://www.google.com/jsapi"></script>
@@ -138,12 +214,16 @@ if(is_array($rParts) && isset($rParts[2])){
         var ethplorerWidgetPreload = [
             {
                 method: "getPriceHistoryGrouped",
-                options: {address: '<?php echo $address; ?>'}
+                options: {
+                    address: '<?php echo $address; ?>',
+                    <?php if($withEth) echo "withEth: true"; ?>
+                }
             }
         ];
         </script>
     <?php } ?>
     <script src="/api/widget.js?v=<?=$codeVersion?>"></script>
+    <?php includeLocal('head'); ?>
 </head>
 <body>
 <div style="position: relative; min-height: 100vh;">
@@ -162,7 +242,8 @@ if(is_array($rParts) && isset($rParts[2])){
                     </form>
                 </ul>
                 <ul class="nav navbar-nav navbar-right" id="topmenu">
-                    <li onclick="document.location.href='/top';">TOP-50</li>
+                    <li onclick="document.location.href='/index';">Index<div class="new-mark">NEW</div></li>
+                    <li onclick="document.location.href='/top';">TOP-50<div class="new-mark">NEW</div></li>
                     <li onclick="document.location.href='/widgets';">Widgets</li>
                     <li onclick="document.location.href='https://github.com/EverexIO/Ethplorer/wiki/Ethplorer-API';">API</li>
                     <li onclick="document.location.href='https://ethplorer.io/#subscribe';">Subscribe</li>
@@ -174,12 +255,7 @@ if(is_array($rParts) && isset($rParts[2])){
     <div class="container">
         <div class="starter-template">
             <div id="page-create" class="page">
-                <script async src="//pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
-                <!-- ethp-links-728x15 -->
-                <ins class="adsbygoogle" data-ad-client="ca-pub-6084233468074023" data-ad-slot="5655598045"></ins>
-                <script>
-                (adsbygoogle = window.adsbygoogle || []).push({});
-                </script>
+                <?php includeLocal('ads'); ?>
                 <?php if($error): ?>
                 <div id="error" class="content-page text-center">
                     <h1 class="text-danger">ERROR</h1>
@@ -188,13 +264,26 @@ if(is_array($rParts) && isset($rParts[2])){
                 <?php else: ?>
 
                 <div id="loader" class="text-center">
-                    <div class="timer"></div>
+                    <div class="loader-wrapper">
+                        <div class="dot-loader">
+                            <div class="dot"></div>
+                            <div class="dot"></div>
+                            <div class="dot"></div>
+                        </div>
+                    </div>
                     <div id="searchInProgressText">search in progress...</div>
                 </div>
 
                 <div id="error" class="content-page text-center">
                     <h1 class="text-danger"></h1>
                     <h3 id="error-reason" class="text-danger"></h3>
+                </div>
+
+                <div id="error-with-details" class="content-page text-center">
+                    <div class="ethplorer-panel">
+                        <h3 class="text-danger error-title"></h3>
+                        <div class="error-details"></div>
+                    </div>
                 </div>
 
                 <div>
@@ -262,8 +351,7 @@ if(is_array($rParts) && isset($rParts[2])){
                                 <div class="block-header">
                                     <h3>Internal operations</h3>
                                 </div>
-                                <table class="table">
-                                </table>
+                                <div class="scrollable"><div class="scrollwrapper"><table class="table"></table></div></div>
                             </div>
                         </div>
 
@@ -309,9 +397,17 @@ if(is_array($rParts) && isset($rParts[2])){
                                     <td>Value</td>
                                     <td id="transfer-operation-value" class="list-field"></td>
                                 </tr>
+                                <tr class="blue">
+                                    <td>Value</td>
+                                    <td id="transfer-operation-valueEth" data-type="ether-full" class="list-field"></td>
+                                </tr>
                                 <tr>
                                     <td>Date</td>
                                     <td id="transfer-tx-timestamp" data-type="localdate" class="list-field"></td>
+                                </tr>
+                                <tr>
+                                    <td>Value @ tx date</td>
+                                    <td id="historical-price" data-type="historical-price" class="list-field"></td>
                                 </tr>
                                 <tr>
                                     <td>From</td>
@@ -424,7 +520,7 @@ if(is_array($rParts) && isset($rParts[2])){
                                 </tr>
                                 <tr>
                                     <td>Gas Price</td>
-                                    <td id="transaction-tx-gasPrice" class="list-field" data-type="ether"></td>
+                                    <td id="transaction-tx-gasPrice" class="list-field" data-type="ether-gwei"></td>
                                  </tr>
                                  <tr>
                                     <td>Tx Cost</td>
@@ -482,7 +578,7 @@ if(is_array($rParts) && isset($rParts[2])){
                                 <td>Create Tx</td>
                                 <td id="address-token-createdTx" data-type="ethplorer" class="list-field"></td>
                             </tr>
-                            <tr>
+                            <tr id="addr-balance">
                                 <td>Balance</td>
                                 <td id="address-balance" data-type="ether-full" class="list-field"></td>
                             </tr>
@@ -508,11 +604,14 @@ if(is_array($rParts) && isset($rParts[2])){
                     <div class="col-xs-12 col-md-6">
                         <div class="block" id="address-token-balances">
                             <div class="block-header">
-                                <h3>Token Balances
+                                <h3>Balances <sup><i class="fa fa-question-circle fa-xs" data-toggle="tooltip" data-placement="right" title="ETH&nbsp;+&nbsp;Tokens"></i></sup>
                                     <div id="address-balances-total"></div>
                                 </h3>
                             </div>
-                            <table class="table"></table>
+                            <div class="scrollable"><div class="scrollwrapper"><table class="table"></table></div></div>
+                            <div class="text-center">
+                                <a class="expand-btn">Expand</a>
+                            </div>
                         </div>
                         <div class="block" id="address-chainy-info">
                             <div class="block-header">
@@ -670,6 +769,7 @@ if(is_array($rParts) && isset($rParts[2])){
             </div>
         </div>
     </div>
+    <?php includeLocal('bottom'); ?>
     <div id="disqus_thread" class="container"></div>
     <script>
 
@@ -695,7 +795,7 @@ if(is_array($rParts) && isset($rParts[2])){
                 <div class="col-xs-7 col-sm-3">
                     <a href="#"><img src="/images/ethplorerlogowhite400.png" style="max-width: 140px;" alt=""></a>
                     <div>
-                        <div style="color:#eeeeee;">© 2016-2018 <a href="https://everex.one/" target="_blank" class="small-link">Everex</a>
+                        <div style="color:#eeeeee;">© 2016-2018 <a href="https://everex.io/" target="_blank" class="small-link">Everex</a>
                             <br><a href="/privacy" class="small-link">Privacy &amp; Terms</a><br>
                         </div>
                     </div>
@@ -728,7 +828,17 @@ if(is_array($rParts) && isset($rParts[2])){
 </div>
 <div id="qr-code-popup" title="Address QR-Code" style="padding:5px;"><span id="qr-code-address"></span><br/><br/><center><div id="qr-code"></div></center><br/></div>
 <script>
+<?php if($sentryURL):?>
+if('undefined' !== typeof(Raven)){
+    try {
+        Raven.config("<?php echo $sentryURL; ?>").install();
+    } catch(e) {
+        console.log(e.message);
+    }
+}
+<?php endif; ?>
 $(document).ready(function(){
+    $('[data-toggle="tooltip"]').tooltip({html:true});
     $.fn.bootstrapBtn = $.fn.button.noConflict();
     <?php if($debugEnabled): ?>
     Ethplorer.debug = true;
@@ -743,7 +853,6 @@ $(document).ready(function(){
         'open': function(){
         }
     });
-
 });
 if(Ethplorer.Config.ga){
     (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
@@ -764,5 +873,6 @@ if(Ethplorer.Config.fb){
     fbq('track', 'PageView');
 }
 <?php if(isset($aConfig['scriptAddon'])) echo $aConfig['scriptAddon']; ?></script>
+<script src="/js/cookie-notify.js" async></script>
 </body>
 </html>

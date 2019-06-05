@@ -17,6 +17,9 @@
 
 define("MIN_TOKENS_NUM", 350);
 
+$startTime = microtime(TRUE);
+echo "\n[".date("Y-m-d H:i")."], Started.";
+
 $aConfig = require_once dirname(__FILE__) . '/../service/config.php';
 
 $jsonRequest = json_encode(array(
@@ -50,7 +53,9 @@ if($jsonResponse){
             }
             $confPrices .= '];'. "\n";
             if($numTokens > MIN_TOKENS_NUM){
-                file_put_contents(dirname(__FILE__) . '/../service/config.prices.php', $confPrices);
+                $file = dirname(__FILE__) . '/../service/config.prices.php';
+                file_put_contents($file . '.tmp', $confPrices);
+                rename($file . '.tmp', $file);
             }
         }
     }catch(\Exception $e){
@@ -58,3 +63,6 @@ if($jsonResponse){
         var_dump($e);
     }
 }
+
+$ms = round(microtime(TRUE) - $startTime, 4);
+echo "\n[".date("Y-m-d H:i")."], Finished, {$ms} s.";

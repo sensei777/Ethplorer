@@ -21,9 +21,17 @@ header('Content-Type: application/json');
 
 require dirname(__FILE__) . '/../service/lib/ethplorer.php';
 require dirname(__FILE__) . '/controller.php';
+require_once dirname(__FILE__) . '/../service/lib/metric.php';
 
 try {
-    $es = Ethplorer::db(require_once dirname(__FILE__) . '/../service/config.php');
+    $aConfig = require_once dirname(__FILE__) . '/../service/config.php';
+    if($debugId = filter_input(INPUT_GET, 'debugId')){
+        $aConfig['debugId'] = $debugId;
+    }
+    if (!empty($aConfig) && !empty($aConfig['statsd'])) {
+        Metrics::initMetric($aConfig['statsd']);
+    }
+    $es = Ethplorer::db($aConfig);
 }catch(Exception $e){
     // MongoDB connection error
     $es = FALSE;
